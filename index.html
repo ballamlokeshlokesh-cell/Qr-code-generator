@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f6f7f2" />
+  <meta name="description" content="QR Forge turns links and full-size photos into beautifully styled, downloadable QR codes." />
+  <title>QR Forge — QR code generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://unpkg.com/qr-code-styling@1.8.4/lib/qr-code-styling.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="QR Forge home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+        <span class="brand-name">QR<span>/</span>FORGE</span>
+      </a>
+      <div class="topbar-note"><span class="live-dot"></span>Instant, local, yours</div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="eyebrow"><span class="eyebrow-line"></span>Signal studio / 01</div>
+        <h1 id="page-title">Make a QR code<br /><em>worth scanning.</em></h1>
+        <p class="hero-copy">Turn links and full-size images into crisp, on-brand QR codes in seconds. Style the signal, check the preview, then take it with you.</p>
+        <div class="hero-meta">
+          <span><strong>01</strong>Choose a source</span>
+          <span><strong>02</strong>Shape the signal</span>
+          <span><strong>03</strong>Download anywhere</span>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="QR code generator workspace">
+        <div class="builder-panel panel">
+          <div class="panel-heading">
+            <div>
+              <div class="section-kicker">Build your signal</div>
+              <h2>What should this code open?</h2>
+            </div>
+            <span class="step-badge">A / 03</span>
+          </div>
+
+          <div class="mode-switch" role="tablist" aria-label="QR source type">
+            <button class="mode-tab is-active" role="tab" aria-selected="true" data-mode="url" id="tab-url"><span class="tab-icon">↗</span>URL or text</button>
+            <button class="mode-tab" role="tab" aria-selected="false" data-mode="photos" id="tab-photos"><span class="tab-icon">▧</span>One image</button>
+          </div>
+
+          <div id="url-panel" class="mode-panel" role="tabpanel" aria-labelledby="tab-url">
+            <label class="field-label" for="url-input">Destination URL or text <span class="required">Required</span></label>
+            <div class="input-wrap">
+              <span class="input-prefix">https://</span>
+              <input id="url-input" type="text" inputmode="url" autocomplete="url" value="qrforge.studio/launch" placeholder="your-site.com/launch" />
+              <button class="clear-input" type="button" id="clear-url" aria-label="Clear URL">×</button>
+            </div>
+            <p class="field-hint">We’ll add <span class="mono">https://</span> when a destination needs it.</p>
+            <div class="quick-links" aria-label="Example destinations">
+              <span class="quick-label">Try a sample</span>
+              <button type="button" class="quick-chip" data-url="qrforge.studio/launch">Launch page</button>
+              <button type="button" class="quick-chip" data-url="https://example.com/menu">Menu link</button>
+              <button type="button" class="quick-chip" data-url="https://maps.google.com">Map pin</button>
+            </div>
+          </div>
+
+          <div id="photos-panel" class="mode-panel is-hidden" role="tabpanel" aria-labelledby="tab-photos">
+            <div class="photo-intro"><span class="photo-intro-icon">▦</span><div><strong>Select one image. Scan it open.</strong><p>Upload an image up to 100 MB. QR Forge hosts the original and puts its public address in the QR code, so scanning opens the full image.</p></div></div>
+            <div class="photo-slots" id="photo-slots"></div>
+            <p class="field-hint photo-note"><span class="status-dot"></span><span id="photo-upload-status">Full-size original will be hosted for scan access.</span></p>
+          </div>
+
+          <div class="rule"></div>
+          <div class="style-heading">
+            <div><div class="section-kicker">Make it yours</div><h3>Signal styling</h3></div>
+            <span class="style-live"><span class="live-dot"></span>Live preview</span>
+          </div>
+
+          <div class="style-grid">
+            <div class="style-field style-field-wide">
+              <label class="field-label" for="module-shape">Module shape</label>
+              <div class="select-wrap"><select id="module-shape"><option value="rounded">Soft rounded</option><option value="square">Classic square</option><option value="dots">Dot matrix</option><option value="classy">Classy</option><option value="classy-rounded">Classy rounded</option><option value="extra-rounded">Extra rounded</option></select><span class="select-chevron">⌄</span></div>
+            </div>
+            <div class="style-field">
+              <label class="field-label" for="corner-shape">Corner shape</label>
+              <div class="select-wrap"><select id="corner-shape"><option value="extra-rounded">Extra rounded</option><option value="square">Square</option><option value="dot">Dot</option></select><span class="select-chevron">⌄</span></div>
+            </div>
+            <div class="style-field color-field">
+              <label class="field-label" for="foreground-color">Ink color</label>
+              <div class="color-control"><input id="foreground-color" type="color" value="#14231d" /><span id="foreground-value">#14231D</span></div>
+            </div>
+            <div class="style-field color-field">
+              <label class="field-label" for="background-color">Canvas color</label>
+              <div class="color-control"><input id="background-color" type="color" value="#f9fbf6" /><span id="background-value">#F9FBF6</span></div>
+            </div>
+          </div>
+
+          <div class="reliability"><span class="reliability-icon">✓</span><div><strong>Scan-safe by default</strong><p>High-contrast styling and quiet space keep every signal legible.</p></div></div>
+          <button class="primary-button" id="generate-button" type="button"><span>Generate QR code</span><span class="button-arrow">↗</span></button>
+          <p class="error-message" id="error-message" role="alert" aria-live="polite"></p>
+        </div>
+
+        <aside class="preview-panel panel" aria-label="QR preview">
+          <div class="preview-topline"><div class="section-kicker">Your output</div><span class="preview-count" id="preview-count">Preview / 01</span></div>
+          <div id="output-area" class="output-area">
+            <div class="empty-preview">
+              <div class="empty-signal"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+              <p>Shape your signal<br /><strong>and see it land here.</strong></p>
+            </div>
+          </div>
+          <div class="preview-footer"><span class="footer-note">No account. No watermark.</span><span class="footer-mark">QR / F</span></div>
+        </aside>
+      </section>
+
+      <section class="how-it-works" aria-labelledby="how-title">
+        <div class="section-kicker">A small ritual for a better signal</div>
+        <h2 id="how-title">From blank canvas<br /><em>to scan-ready.</em></h2>
+        <div class="ritual-steps">
+          <div class="ritual-step"><span class="ritual-number">01</span><div class="ritual-icon icon-link">↗</div><h3>Point it somewhere</h3><p>Paste a URL, write a short message, or select one photo.</p></div>
+          <div class="ritual-step"><span class="ritual-number">02</span><div class="ritual-icon icon-shape">◌</div><h3>Give it a shape</h3><p>Choose your modules, corners, and a calm color pairing.</p></div>
+          <div class="ritual-step"><span class="ritual-number">03</span><div class="ritual-icon icon-download">↓</div><h3>Take it with you</h3><p>Download a high-resolution PNG for screen or print.</p></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><span>Built for the in-between moments.</span><span>QR / FORGE <span class="footer-accent">●</span> 2026</span></footer>
+  </div>
+</body>
+</html>
