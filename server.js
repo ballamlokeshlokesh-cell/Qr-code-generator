@@ -8,7 +8,7 @@ const { Transform } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 
 const PORT = Number(process.env.PORT || 3000);
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'public')) ? path.join(__dirname, 'public') : __dirname;
 const MAX_IMAGE_BYTES = 100 * 1024 * 1024;
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -163,7 +163,7 @@ const server = http.createServer(async (request, response) => {
     response.writeHead(200, {
       'Content-Type': MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream',
       'Content-Length': stats.size,
-      'Cache-Control': path.basename(filePath) === 'index.html' ? 'no-cache' : 'public, max-age=3600'
+      'Cache-Control': 'no-cache'
     });
     if (request.method === 'HEAD') response.end();
     else fs.createReadStream(filePath).pipe(response);

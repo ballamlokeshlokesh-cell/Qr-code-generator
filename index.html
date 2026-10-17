@@ -4,30 +4,78 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f6f7f2" />
-  <meta name="description" content="QR Forge turns links and full-size photos into beautifully styled, downloadable QR codes." />
-  <title>QR Forge — QR code generator</title>
+  <meta name="description" content="QR Forge — Turn links and full-size photos into beautifully styled, downloadable QR codes." />
+  <title>QR Forge — Studio Quality QR Code Generator</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="styles.css?v=4" />
   <script src="https://unpkg.com/qr-code-styling@1.8.4/lib/qr-code-styling.js" defer></script>
-  <script src="/app.js" defer></script>
+  <script src="app.js?v=4" defer></script>
 </head>
 <body>
   <div class="app-shell">
+    <!-- Header / Navbar -->
     <header class="topbar">
       <a class="brand" href="/" aria-label="QR Forge home">
-        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-        <span class="brand-name">QR<span>/</span>FORGE</span>
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span>
+          <span></span><span></span>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">QR<span>/</span>FORGE</span>
+          <span class="brand-sub">STUDIO</span>
+        </div>
       </a>
-      <div class="topbar-note"><span class="live-dot"></span>Instant, local, yours</div>
+
+      <div class="topbar-actions">
+        <div class="topbar-badge">
+          <span class="live-dot pulse"></span>
+          <span class="topbar-badge-text">Instant Engine</span>
+        </div>
+
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Switch color theme">
+          <span class="theme-icon icon-sun" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </span>
+          <span class="theme-icon icon-moon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+      </div>
     </header>
 
-    <main>
+    <main id="main-content">
+      <!-- Hero Section with radar watermark -->
       <section class="hero" aria-labelledby="page-title">
-        <div class="eyebrow"><span class="eyebrow-line"></span>Signal studio / 01</div>
-        <h1 id="page-title">Make a QR code<br /><em>worth scanning.</em></h1>
-        <p class="hero-copy">Turn links and full-size images into crisp, on-brand QR codes in seconds. Style the signal, check the preview, then take it with you.</p>
+        <div class="eyebrow">
+          <span class="eyebrow-line"></span>
+          <span>Signal studio / 01 · High-Res &amp; Vector</span>
+        </div>
+
+        <h1 id="page-title">
+          Make a QR code<br />
+          <em>worth scanning.</em>
+        </h1>
+
+        <p class="hero-copy">
+          Turn links, text, and full-size images into crisp, precision-styled QR codes in seconds. Shape the signal, inspect the live preview, then download in high-resolution PNG or vector SVG.
+        </p>
+
         <div class="hero-meta">
           <span><strong>01</strong>Choose a source</span>
           <span><strong>02</strong>Shape the signal</span>
@@ -35,97 +83,262 @@
         </div>
       </section>
 
-      <section class="workspace" aria-label="QR code generator workspace">
+      <!-- Main Workspace: Builder + Sticky Preview -->
+      <section class="workspace" id="workspace" aria-label="QR code generator workspace">
+        <!-- Builder Panel -->
         <div class="builder-panel panel">
           <div class="panel-heading">
             <div>
-              <div class="section-kicker">Build your signal</div>
+              <div class="section-kicker">STEP 01 · DESTINATION</div>
               <h2>What should this code open?</h2>
             </div>
-            <span class="step-badge">A / 03</span>
+            <span class="step-badge">Active</span>
           </div>
 
+          <!-- Mode Selector Tabs -->
           <div class="mode-switch" role="tablist" aria-label="QR source type">
-            <button class="mode-tab is-active" role="tab" aria-selected="true" data-mode="url" id="tab-url"><span class="tab-icon">↗</span>URL or text</button>
-            <button class="mode-tab" role="tab" aria-selected="false" data-mode="photos" id="tab-photos"><span class="tab-icon">▧</span>One image</button>
+            <button class="mode-tab is-active" role="tab" aria-selected="true" data-mode="url" id="tab-url">
+              <span class="tab-icon">↗</span>
+              URL or Text
+            </button>
+            <button class="mode-tab" role="tab" aria-selected="false" data-mode="photos" id="tab-photos">
+              <span class="tab-icon">▧</span>
+              Upload Image
+            </button>
           </div>
 
+          <!-- URL / Text Mode Panel -->
           <div id="url-panel" class="mode-panel" role="tabpanel" aria-labelledby="tab-url">
-            <label class="field-label" for="url-input">Destination URL or text <span class="required">Required</span></label>
+            <label class="field-label" for="url-input">
+              <span>Destination URL or text</span>
+              <span class="required">Required</span>
+            </label>
+
             <div class="input-wrap">
               <span class="input-prefix">https://</span>
               <input id="url-input" type="text" inputmode="url" autocomplete="url" value="qrforge.studio/launch" placeholder="your-site.com/launch" />
-              <button class="clear-input" type="button" id="clear-url" aria-label="Clear URL">×</button>
+              <button class="clear-input" type="button" id="clear-url" aria-label="Clear destination input" title="Clear input">×</button>
             </div>
-            <p class="field-hint">We’ll add <span class="mono">https://</span> when a destination needs it.</p>
+            <p class="field-hint">We’ll automatically add <span class="mono">https://</span> when a destination needs it.</p>
+
             <div class="quick-links" aria-label="Example destinations">
-              <span class="quick-label">Try a sample</span>
-              <button type="button" class="quick-chip" data-url="qrforge.studio/launch">Launch page</button>
-              <button type="button" class="quick-chip" data-url="https://example.com/menu">Menu link</button>
-              <button type="button" class="quick-chip" data-url="https://maps.google.com">Map pin</button>
+              <span class="quick-label">Try quick samples:</span>
+              <div class="quick-chips">
+                <button type="button" class="quick-chip" data-url="qrforge.studio/launch">Launch page</button>
+                <button type="button" class="quick-chip" data-url="https://example.com/menu">Menu link</button>
+                <button type="button" class="quick-chip" data-url="https://maps.google.com">Map pin</button>
+                <button type="button" class="quick-chip" data-url="https://github.com">GitHub</button>
+              </div>
             </div>
           </div>
 
+          <!-- Photo Mode Panel -->
           <div id="photos-panel" class="mode-panel is-hidden" role="tabpanel" aria-labelledby="tab-photos">
-            <div class="photo-intro"><span class="photo-intro-icon">▦</span><div><strong>Select one image. Scan it open.</strong><p>Upload an image up to 100 MB. QR Forge hosts the original and puts its public address in the QR code, so scanning opens the full image.</p></div></div>
+            <div class="photo-intro">
+              <span class="photo-intro-icon">▦</span>
+              <div class="photo-intro-content">
+                <strong>Select one image. Scan it open.</strong>
+                <p>Upload an image up to 100 MB. QR Forge hosts the original and puts its public address in the QR code, so scanning opens the full image.</p>
+              </div>
+            </div>
+
             <div class="photo-slots" id="photo-slots"></div>
-            <p class="field-hint photo-note"><span class="status-dot"></span><span id="photo-upload-status">Full-size original will be hosted for scan access.</span></p>
+
+            <p class="field-hint photo-note">
+              <span class="status-dot"></span>
+              <span id="photo-upload-status">Full-size original will be hosted for scan access.</span>
+            </p>
           </div>
 
           <div class="rule"></div>
+
+          <!-- Style Heading -->
           <div class="style-heading">
-            <div><div class="section-kicker">Make it yours</div><h3>Signal styling</h3></div>
-            <span class="style-live"><span class="live-dot"></span>Live preview</span>
+            <div>
+              <div class="section-kicker">STEP 02 · CUSTOMIZE</div>
+              <h3>Signal Styling</h3>
+            </div>
+            <span class="style-live">
+              <span class="live-dot pulse"></span> Live Sync
+            </span>
           </div>
 
-          <div class="style-grid">
-            <div class="style-field style-field-wide">
-              <label class="field-label" for="module-shape">Module shape</label>
-              <div class="select-wrap"><select id="module-shape"><option value="rounded">Soft rounded</option><option value="square">Classic square</option><option value="dots">Dot matrix</option><option value="classy">Classy</option><option value="classy-rounded">Classy rounded</option><option value="extra-rounded">Extra rounded</option></select><span class="select-chevron">⌄</span></div>
+          <!-- Curated Studio Themes -->
+          <div class="palette-presets" aria-label="Curated color themes">
+            <span class="presets-label">Curated Studio Palettes</span>
+            <div class="presets-list">
+              <button type="button" class="preset-chip" data-fg="#14231d" data-bg="#ffffff" title="Classic Noir">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #14231d 50%, #ffffff 50%);"></span>
+                <span>Classic</span>
+              </button>
+              <button type="button" class="preset-chip" data-fg="#14231d" data-bg="#d8fb69" title="Acid Studio">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #14231d 50%, #d8fb69 50%);"></span>
+                <span>Acid Studio</span>
+              </button>
+              <button type="button" class="preset-chip" data-fg="#ff6f52" data-bg="#fbfcf8" title="Warm Coral">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #ff6f52 50%, #fbfcf8 50%);"></span>
+                <span>Coral Warmth</span>
+              </button>
+              <button type="button" class="preset-chip" data-fg="#14231d" data-bg="#e9f2e9" title="Sage Moss">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #14231d 50%, #e9f2e9 50%);"></span>
+                <span>Sage Moss</span>
+              </button>
+              <button type="button" class="preset-chip" data-fg="#d8fb69" data-bg="#14231d" title="Acid Dark">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #d8fb69 50%, #14231d 50%);"></span>
+                <span>Acid Dark</span>
+              </button>
             </div>
+          </div>
+
+          <!-- Styling Controls Grid (Balanced 2-columns) -->
+          <div class="style-grid">
+            <div class="style-field">
+              <label class="field-label" for="module-shape">Module shape</label>
+              <div class="select-wrap">
+                <select id="module-shape">
+                  <option value="rounded" selected>Soft rounded</option>
+                  <option value="square">Classic square</option>
+                  <option value="dots">Dot matrix</option>
+                  <option value="classy">Classy</option>
+                  <option value="classy-rounded">Classy rounded</option>
+                  <option value="extra-rounded">Extra rounded</option>
+                </select>
+                <span class="select-chevron" aria-hidden="true">⌄</span>
+              </div>
+            </div>
+
             <div class="style-field">
               <label class="field-label" for="corner-shape">Corner shape</label>
-              <div class="select-wrap"><select id="corner-shape"><option value="extra-rounded">Extra rounded</option><option value="square">Square</option><option value="dot">Dot</option></select><span class="select-chevron">⌄</span></div>
+              <div class="select-wrap">
+                <select id="corner-shape">
+                  <option value="extra-rounded" selected>Extra rounded</option>
+                  <option value="square">Square</option>
+                  <option value="dot">Dot</option>
+                </select>
+                <span class="select-chevron" aria-hidden="true">⌄</span>
+              </div>
             </div>
+
             <div class="style-field color-field">
-              <label class="field-label" for="foreground-color">Ink color</label>
-              <div class="color-control"><input id="foreground-color" type="color" value="#14231d" /><span id="foreground-value">#14231D</span></div>
+              <label class="field-label" for="foreground-color">Ink color (QR)</label>
+              <div class="color-control" id="fg-control-wrap">
+                <input id="foreground-color" type="color" value="#14231d" />
+                <span class="color-preview-pill" id="fg-preview-pill" style="background-color: #14231d;"></span>
+                <span class="color-hex-text" id="foreground-value">#14231D</span>
+              </div>
             </div>
+
             <div class="style-field color-field">
-              <label class="field-label" for="background-color">Canvas color</label>
-              <div class="color-control"><input id="background-color" type="color" value="#f9fbf6" /><span id="background-value">#F9FBF6</span></div>
+              <label class="field-label" for="background-color">Canvas color (BG)</label>
+              <div class="color-control" id="bg-control-wrap">
+                <input id="background-color" type="color" value="#ffffff" />
+                <span class="color-preview-pill" id="bg-preview-pill" style="background-color: #ffffff;"></span>
+                <span class="color-hex-text" id="background-value">#FFFFFF</span>
+              </div>
             </div>
           </div>
 
-          <div class="reliability"><span class="reliability-icon">✓</span><div><strong>Scan-safe by default</strong><p>High-contrast styling and quiet space keep every signal legible.</p></div></div>
-          <button class="primary-button" id="generate-button" type="button"><span>Generate QR code</span><span class="button-arrow">↗</span></button>
+          <!-- Reliability note -->
+          <div class="reliability">
+            <div class="reliability-icon">✓</div>
+            <div class="reliability-text">
+              <strong>Scan-Safe by default</strong>
+              <p>High-contrast styling and quiet space keep every signal legible on any camera.</p>
+            </div>
+          </div>
+
+          <!-- Primary generate button -->
+          <button class="primary-button" id="generate-button" type="button">
+            <span class="button-label">Generate QR code</span>
+            <span class="button-arrow" aria-hidden="true">↗</span>
+          </button>
+
           <p class="error-message" id="error-message" role="alert" aria-live="polite"></p>
         </div>
 
-        <aside class="preview-panel panel" aria-label="QR preview">
-          <div class="preview-topline"><div class="section-kicker">Your output</div><span class="preview-count" id="preview-count">Preview / 01</span></div>
+        <!-- Output / Preview Panel -->
+        <aside class="preview-panel panel" id="preview-panel" aria-label="QR code preview">
+          <div class="preview-topline">
+            <div>
+              <div class="section-kicker">STEP 03 · EXPORT</div>
+              <h3 class="preview-title">Live Preview</h3>
+            </div>
+            <span class="preview-count" id="preview-count">720 × 720 px</span>
+          </div>
+
           <div id="output-area" class="output-area">
             <div class="empty-preview">
-              <div class="empty-signal"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+              <div class="empty-signal">
+                <span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+              </div>
               <p>Shape your signal<br /><strong>and see it land here.</strong></p>
             </div>
           </div>
-          <div class="preview-footer"><span class="footer-note">No account. No watermark.</span><span class="footer-mark">QR / F</span></div>
+
+          <div class="preview-footer">
+            <div class="preview-footer-left">
+              <span class="status-indicator"></span>
+              <span class="footer-note">No account · No watermark</span>
+            </div>
+            <span class="footer-mark">QR / FORGE</span>
+          </div>
         </aside>
       </section>
 
+      <!-- How It Works Section -->
       <section class="how-it-works" aria-labelledby="how-title">
         <div class="section-kicker">A small ritual for a better signal</div>
-        <h2 id="how-title">From blank canvas<br /><em>to scan-ready.</em></h2>
+        <h2 id="how-title">
+          From blank canvas<br />
+          <em>to scan-ready.</em>
+        </h2>
+
         <div class="ritual-steps">
-          <div class="ritual-step"><span class="ritual-number">01</span><div class="ritual-icon icon-link">↗</div><h3>Point it somewhere</h3><p>Paste a URL, write a short message, or select one photo.</p></div>
-          <div class="ritual-step"><span class="ritual-number">02</span><div class="ritual-icon icon-shape">◌</div><h3>Give it a shape</h3><p>Choose your modules, corners, and a calm color pairing.</p></div>
-          <div class="ritual-step"><span class="ritual-number">03</span><div class="ritual-icon icon-download">↓</div><h3>Take it with you</h3><p>Download a high-resolution PNG for screen or print.</p></div>
+          <div class="ritual-step">
+            <span class="ritual-number">01</span>
+            <div class="ritual-icon icon-link">↗</div>
+            <h3>Point it somewhere</h3>
+            <p>Paste a URL, write a short message, or select one photo up to 100 MB.</p>
+          </div>
+
+          <div class="ritual-step">
+            <span class="ritual-number">02</span>
+            <div class="ritual-icon icon-shape">◌</div>
+            <h3>Give it a shape</h3>
+            <p>Choose your modules, corners, and a curated studio color pairing.</p>
+          </div>
+
+          <div class="ritual-step">
+            <span class="ritual-number">03</span>
+            <div class="ritual-icon icon-download">↓</div>
+            <h3>Take it with you</h3>
+            <p>Download a high-resolution PNG or infinitely scalable vector SVG for print.</p>
+          </div>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer"><span>Built for the in-between moments.</span><span>QR / FORGE <span class="footer-accent">●</span> 2026</span></footer>
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-left">
+        <span>Built for the in-between moments.</span>
+      </div>
+      <div class="footer-right">
+        <span>QR / FORGE <span class="footer-accent">●</span> STUDIO EDITION</span>
+      </div>
+    </footer>
   </div>
+
+  <!-- Mobile Floating Quick Preview Pill -->
+  <button class="mobile-preview-btn" id="mobile-preview-btn" type="button" aria-label="Jump to QR code preview">
+    <span class="mobile-preview-icon">▦</span>
+    <span>View Preview</span>
+    <span class="mobile-preview-arrow">↓</span>
+  </button>
+
+  <!-- Toast Notification Container -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
