@@ -1,19 +1,21 @@
 # QR Forge
 
-QR Forge is a lightweight web app for generating QR codes from URLs or uploaded images. It includes a modern single-page interface, customizable QR styling, and a small Node.js server for serving the app and handling image uploads.
+QR Forge is a lightweight web app for generating QR codes from URLs or uploaded images. It includes a modern single-page interface, customizable QR styling, and a small Node.js server for serving the app and handling uploads.
 
 ## Features
 
 - Generate QR codes from a URL or text destination
 - Generate QR codes for uploaded images by hosting the original image and encoding its public URL
+- Accept a wide range of common image types: PNG, JPG, WEBP, GIF, AVIF, HEIC, BMP, and other browser-supported image formats
 - Customize QR appearance:
   - dot shape
   - corner shape
   - foreground color
   - background color
-- Preview and download the generated QR code as a PNG
+- Preview and download the generated QR code as a PNG or SVG
 - Built-in health check endpoint for service monitoring
 - Docker-ready deployment
+- Local upload fallback when external durable storage is unavailable
 
 ## Project structure
 
@@ -55,6 +57,12 @@ docker build -t qr-forge .
 docker run -p 3000:3000 qr-forge
 ```
 
+## Image upload behavior
+
+The app supports image uploads directly from the browser. When `MANUS_API_URL` and `MANUS_API_KEY` are configured, uploaded originals are stored in managed durable storage. If those environment variables are not set, the app automatically stores the uploaded image locally as a fallback so the QR code can still be generated.
+
+This means users can upload and generate QR codes from the image without the app failing when external storage is unavailable.
+
 ## Environment variables
 
 The app can optionally use the following environment variables for durable image storage:
@@ -62,7 +70,7 @@ The app can optionally use the following environment variables for durable image
 - `MANUS_API_URL`
 - `MANUS_API_KEY`
 
-If these are not set, image uploads will return a `503` response indicating that durable storage is unavailable.
+If these are not set, image uploads still work through the local fallback route.
 
 ## API endpoints
 
