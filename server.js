@@ -9,6 +9,7 @@ const { pipeline } = require('node:stream/promises');
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'public')) ? path.join(__dirname, 'public') : __dirname;
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const MAX_IMAGE_BYTES = 100 * 1024 * 1024;
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -19,8 +20,14 @@ const MIME_TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp'
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.avif': 'image/avif',
+  '.heic': 'image/heic',
+  '.bmp': 'image/bmp'
 };
+
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 function sendJson(response, status, payload) {
   const body = JSON.stringify(payload);
@@ -39,9 +46,11 @@ function storageKeyFor(contentType) {
     'image/webp': 'webp',
     'image/gif': 'gif',
     'image/avif': 'avif',
-    'image/heic': 'heic'
+    'image/heic': 'heic',
+    'image/bmp': 'bmp',
+    'image/svg+xml': 'svg'
   })[contentType] || 'bin';
-  return `qrforge/images/${Date.now()}-${crypto.randomBytes(9).toString('hex')}.${extension}`;
+  return `${Date.now()}-${crypto.randomBytes(9).toString('hex')}.${extension}`;
 }
 
 async function stageRequest(request) {
@@ -67,6 +76,13 @@ async function stageRequest(request) {
   }
 }
 
+async function saveLocalImage(staged, contentType) {
+  const fileName = storageKeyFor(contentType);
+  const targetPath = path.join(UPLOAD_DIR, fileName);
+  await fsp.copyFile(staged.tempPath, targetPath);
+  return { path: `/uploads/${fileName}`, contentType };
+}
+
 async function uploadImage(request, response) {
   const contentType = String(request.headers['content-type'] || '').split(';')[0].toLowerCase();
   const contentLength = Number(request.headers['content-length'] || 0);
@@ -80,16 +96,22 @@ async function uploadImage(request, response) {
     sendJson(response, 413, { error: 'That image is larger than the 100 MB upload limit.' });
     return;
   }
-  if (!process.env.MANUS_API_URL || !process.env.MANUS_API_KEY) {
-    request.resume();
-    sendJson(response, 503, { error: 'Durable image storage is not available yet.' });
-    return;
-  }
 
   let staged;
   try {
     staged = await stageRequest(request);
-    const key = storageKeyFor(contentType);
+
+    if (!process.env.MANUS_API_URL || !process.env.MANUS_API_KEY) {
+      const localFile = await saveLocalImage(staged, contentType);
+      sendJson(response, 201, {
+        path: localFile.path,
+        contentType,
+        message: 'Original image saved locally.'
+      });
+      return;
+    }
+
+    const key = `qrforge/images/${storageKeyFor(contentType)}`;
     const presignUrl = `${process.env.MANUS_API_URL}/v1/storage/presign/put?path=${encodeURIComponent(key)}`;
     const presignResponse = await fetch(presignUrl, {
       headers: { Authorization: `Bearer ${process.env.MANUS_API_KEY}` }
