@@ -4,22 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f6f7f2" />
-  <meta name="description" content="QR Forge — Turn links and full-size photos into beautifully styled, downloadable QR codes." />
-  <title>QR Forge — Studio Quality QR Code Generator</title>
+  <meta name="description" content="QR Forge Studio — Studio-quality QR Code Generator and instant Image to Link hosting. Turn links and images into QR codes or shareable web links with embed codes." />
+  <meta property="og:title" content="QR Forge Studio — QR Code & Image to Link Generator" />
+  <meta property="og:description" content="Turn links and images into precision-styled QR codes or instant shareable public web links in seconds." />
+  <meta property="og:type" content="website" />
+  <title>QR Forge Studio — QR Code &amp; Image to Link Generator</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <script src="https://unpkg.com/qr-code-styling@1.8.4/lib/qr-code-styling.js" defer></script>
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </head>
 <body>
   <div class="app-shell">
     <!-- Header / Navbar -->
     <header class="topbar">
-      <a class="brand" href="/" aria-label="QR Forge home">
+      <a class="brand" href="./" aria-label="QR Forge home">
         <div class="brand-mark" aria-hidden="true">
           <span></span><span></span>
           <span></span><span></span>
@@ -31,10 +34,17 @@
       </a>
 
       <div class="topbar-actions">
-        <div class="topbar-badge">
+        <div class="topbar-badge" id="cloud-badge" title="Zero-friction cloud hosting active">
           <span class="live-dot pulse"></span>
-          <span class="topbar-badge-text">Instant Engine</span>
+          <span class="topbar-badge-text" id="engine-status">Cloud Engine Active</span>
         </div>
+
+        <button class="settings-toggle" id="settings-toggle" type="button" aria-label="Storage Settings" title="Storage & Cloud Settings">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
 
         <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Switch color theme">
           <span class="theme-icon icon-sun" aria-hidden="true">
@@ -64,22 +74,22 @@
       <section class="hero" aria-labelledby="page-title">
         <div class="eyebrow">
           <span class="eyebrow-line"></span>
-          <span>Signal studio / 01 · High-Res &amp; Vector</span>
+          <span>Signal Studio · QR &amp; Link Engine</span>
         </div>
 
         <h1 id="page-title">
-          Make a QR code<br />
-          <em>worth scanning.</em>
+          Make a QR code &amp; link<br />
+          <em>worth sharing.</em>
         </h1>
 
         <p class="hero-copy">
-          Turn links, text, and full-size images into crisp, precision-styled QR codes in seconds. Shape the signal, inspect the live preview, then download in high-resolution PNG or vector SVG.
+          Turn links, text, and photos into precision-styled QR codes, or upload any image to generate instant shareable links, direct URLs, Markdown, and embed codes.
         </p>
 
         <div class="hero-meta">
           <span><strong>01</strong>Choose a source</span>
-          <span><strong>02</strong>Shape the signal</span>
-          <span><strong>03</strong>Download anywhere</span>
+          <span><strong>02</strong>Host &amp; shape signal</span>
+          <span><strong>03</strong>Export &amp; share anywhere</span>
         </div>
       </section>
 
@@ -89,25 +99,30 @@
         <div class="builder-panel panel">
           <div class="panel-heading">
             <div>
-              <div class="section-kicker">STEP 01 · DESTINATION</div>
-              <h2>What should this code open?</h2>
+              <div class="section-kicker" id="step-1-kicker">STEP 01 · DESTINATION</div>
+              <h2 id="step-1-title">What should this code open?</h2>
             </div>
-            <span class="step-badge">Active</span>
+            <span class="step-badge" id="step-badge-text">Active</span>
           </div>
 
-          <!-- Mode Selector Tabs -->
-          <div class="mode-switch" role="tablist" aria-label="QR source type">
+          <!-- Mode Selector Tabs (3 Options) -->
+          <div class="mode-switch" role="tablist" aria-label="Source mode">
             <button class="mode-tab is-active" role="tab" aria-selected="true" data-mode="url" id="tab-url">
               <span class="tab-icon">↗</span>
-              URL or Text
+              <span>URL to QR</span>
             </button>
             <button class="mode-tab" role="tab" aria-selected="false" data-mode="photos" id="tab-photos">
               <span class="tab-icon">▧</span>
-              Upload Image
+              <span>Image to QR</span>
+            </button>
+            <button class="mode-tab" role="tab" aria-selected="false" data-mode="link" id="tab-link">
+              <span class="tab-icon">🔗</span>
+              <span>Image to Link</span>
+              <span class="tab-badge">NEW</span>
             </button>
           </div>
 
-          <!-- URL / Text Mode Panel -->
+          <!-- Tab 1: URL / Text Mode Panel -->
           <div id="url-panel" class="mode-panel" role="tabpanel" aria-labelledby="tab-url">
             <label class="field-label" for="url-input">
               <span>Destination URL or text</span>
@@ -132,28 +147,179 @@
             </div>
           </div>
 
-          <!-- Photo Mode Panel -->
+          <!-- Tab 2: Photo to QR Mode Panel -->
           <div id="photos-panel" class="mode-panel is-hidden" role="tabpanel" aria-labelledby="tab-photos">
             <div class="photo-intro">
               <span class="photo-intro-icon">▦</span>
               <div class="photo-intro-content">
-                <strong>Select one image. Scan it open.</strong>
-                <p>Upload an image up to 100 MB. QR Forge hosts the original and puts its public address in the QR code, so scanning opens the full image.</p>
+                <strong>Upload image. Scan to open.</strong>
+                <p>Upload PNG, JPG, WEBP, or GIF. QR Forge securely hosts the image and encodes its public link into the QR code so any camera can scan and view it instantly.</p>
               </div>
             </div>
 
             <div class="photo-slots" id="photo-slots"></div>
 
+            <!-- Upload Progress Bar -->
+            <div class="upload-progress-wrap is-hidden" id="photo-progress-wrap">
+              <div class="upload-progress-bar">
+                <div class="upload-progress-fill" id="photo-progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="upload-progress-text">
+                <span id="photo-progress-status">Uploading image to cloud…</span>
+                <span id="photo-progress-pct" class="mono">0%</span>
+              </div>
+            </div>
+
             <p class="field-hint photo-note">
               <span class="status-dot"></span>
-              <span id="photo-upload-status">Full-size original will be hosted for scan access.</span>
+              <span id="photo-upload-status">Full-size image will be hosted for instant scan access.</span>
             </p>
+
+            <div class="hosted-url-display is-hidden" id="photo-hosted-box">
+              <label class="field-label">Hosted Image Destination</label>
+              <div class="link-input-row">
+                <input type="text" id="photo-hosted-url" readonly />
+                <button type="button" class="btn-copy" id="photo-copy-hosted-btn">Copy</button>
+              </div>
+            </div>
           </div>
 
-          <div class="rule"></div>
+          <!-- Tab 3: Image to Link Generator Panel (NEW) -->
+          <div id="link-panel" class="mode-panel is-hidden" role="tabpanel" aria-labelledby="tab-link">
+            <div class="photo-intro link-mode-intro">
+              <span class="photo-intro-icon">🔗</span>
+              <div class="photo-intro-content">
+                <strong>Upload Image · Get Instant Web Links</strong>
+                <p>Convert any image file into a permanent shareable web link, direct URL, Markdown, or HTML embed code. Zero sign-up required.</p>
+              </div>
+            </div>
+
+            <!-- Upload Drop Slot -->
+            <div class="link-drop-container" id="link-slots"></div>
+
+            <!-- Link Upload Progress Bar -->
+            <div class="upload-progress-wrap is-hidden" id="link-progress-wrap">
+              <div class="upload-progress-bar">
+                <div class="upload-progress-fill" id="link-progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="upload-progress-text">
+                <span id="link-progress-status">Uploading image to cloud…</span>
+                <span id="link-progress-pct" class="mono">0%</span>
+              </div>
+            </div>
+
+            <p class="field-hint photo-note" id="link-hint-note">
+              <span class="status-dot"></span>
+              <span id="link-upload-status">Drop or select an image to generate public web links.</span>
+            </p>
+
+            <!-- Results Section for Link Generator -->
+            <div class="link-results-wrap is-hidden" id="link-results">
+              <div class="asset-meta-header">
+                <div class="asset-meta-left">
+                  <span class="asset-badge-dot"></span>
+                  <strong class="asset-name-title" id="asset-meta-name">image.png</strong>
+                </div>
+                <div class="asset-meta-tags">
+                  <span class="meta-tag" id="asset-meta-size">0 KB</span>
+                  <span class="meta-tag" id="asset-meta-dims">0 × 0</span>
+                  <span class="meta-tag" id="asset-meta-type">PNG</span>
+                </div>
+              </div>
+
+              <!-- Shareable Web Link -->
+              <div class="link-group">
+                <div class="link-group-header">
+                  <span>Shareable Page Link</span>
+                  <span class="link-group-sub">Opens full image in browser</span>
+                </div>
+                <div class="link-input-row">
+                  <input type="text" id="out-page-url" readonly />
+                  <button type="button" class="btn-copy" data-target="out-page-url">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy</span>
+                  </button>
+                  <a href="#" target="_blank" rel="noopener noreferrer" class="btn-icon-link" id="out-page-open" title="Open link in new tab">↗</a>
+                </div>
+              </div>
+
+              <!-- Direct Image URL -->
+              <div class="link-group">
+                <div class="link-group-header">
+                  <span>Direct Image URL</span>
+                  <span class="link-group-sub">Raw file link (.png / .jpg)</span>
+                </div>
+                <div class="link-input-row">
+                  <input type="text" id="out-direct-url" readonly />
+                  <button type="button" class="btn-copy" data-target="out-direct-url">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Markdown Code -->
+              <div class="link-group">
+                <div class="link-group-header">
+                  <span>Markdown Code</span>
+                  <span class="link-group-sub">For GitHub, Discord, Reddit</span>
+                </div>
+                <div class="link-input-row">
+                  <input type="text" id="out-markdown" readonly />
+                  <button type="button" class="btn-copy" data-target="out-markdown">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- HTML Embed Code -->
+              <div class="link-group">
+                <div class="link-group-header">
+                  <span>HTML Embed Code</span>
+                  <span class="link-group-sub">For websites &amp; blogs</span>
+                </div>
+                <div class="link-input-row">
+                  <input type="text" id="out-html" readonly />
+                  <button type="button" class="btn-copy" data-target="out-html">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- BBCode for Forums -->
+              <div class="link-group">
+                <div class="link-group-header">
+                  <span>BBCode</span>
+                  <span class="link-group-sub">For online forums</span>
+                </div>
+                <div class="link-input-row">
+                  <input type="text" id="out-bbcode" readonly />
+                  <button type="button" class="btn-copy" data-target="out-bbcode">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick action banner -->
+              <div class="link-extra-actions">
+                <button type="button" class="action-pill-btn" id="link-make-qr-btn">
+                  <span class="pill-icon">▦</span>
+                  <span>Make QR Code for this Image</span>
+                </button>
+                <button type="button" class="action-pill-btn secondary" id="link-clear-btn">
+                  <span>Upload Another Image</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rule" id="step-divider"></div>
 
           <!-- Style Heading -->
-          <div class="style-heading">
+          <div class="style-heading" id="styling-heading">
             <div>
               <div class="section-kicker">STEP 02 · CUSTOMIZE</div>
               <h3>Signal Styling</h3>
@@ -164,7 +330,7 @@
           </div>
 
           <!-- Curated Studio Themes -->
-          <div class="palette-presets" aria-label="Curated color themes">
+          <div class="palette-presets" id="styling-presets" aria-label="Curated color themes">
             <span class="presets-label">Curated Studio Palettes</span>
             <div class="presets-list">
               <button type="button" class="preset-chip" data-fg="#14231d" data-bg="#ffffff" title="Classic Noir">
@@ -191,7 +357,7 @@
           </div>
 
           <!-- Styling Controls Grid (Balanced 2-columns) -->
-          <div class="style-grid">
+          <div class="style-grid" id="styling-grid">
             <div class="style-field">
               <label class="field-label" for="module-shape">Module shape</label>
               <div class="select-wrap">
@@ -239,7 +405,7 @@
           </div>
 
           <!-- Reliability note -->
-          <div class="reliability">
+          <div class="reliability" id="styling-reliability">
             <div class="reliability-icon">✓</div>
             <div class="reliability-text">
               <strong>Scan-Safe by default</strong>
@@ -249,19 +415,19 @@
 
           <!-- Primary generate button -->
           <button class="primary-button" id="generate-button" type="button">
-            <span class="button-label">Generate QR code</span>
+            <span class="button-label" id="generate-btn-label">Generate QR code</span>
             <span class="button-arrow" aria-hidden="true">↗</span>
           </button>
 
           <p class="error-message" id="error-message" role="alert" aria-live="polite"></p>
         </div>
 
-        <!-- Output / Preview Panel -->
-        <aside class="preview-panel panel" id="preview-panel" aria-label="QR code preview">
+        <!-- Output / Preview Panel (Adaptive for QR & Link Generator) -->
+        <aside class="preview-panel panel" id="preview-panel" aria-label="Output preview">
           <div class="preview-topline">
             <div>
-              <div class="section-kicker">STEP 03 · EXPORT</div>
-              <h3 class="preview-title">Live Preview</h3>
+              <div class="section-kicker" id="preview-kicker">STEP 03 · EXPORT</div>
+              <h3 class="preview-title" id="preview-title">Live Preview</h3>
             </div>
             <span class="preview-count" id="preview-count">720 × 720 px</span>
           </div>
@@ -300,21 +466,21 @@
             <span class="ritual-number">01</span>
             <div class="ritual-icon icon-link">↗</div>
             <h3>Point it somewhere</h3>
-            <p>Paste a URL, write a short message, or select one photo up to 100 MB.</p>
+            <p>Paste a URL, select an image to generate a QR code, or use the <strong>Image to Link</strong> generator for instant shareable cloud links.</p>
           </div>
 
           <div class="ritual-step">
             <span class="ritual-number">02</span>
             <div class="ritual-icon icon-shape">◌</div>
             <h3>Give it a shape</h3>
-            <p>Choose your modules, corners, and a curated studio color pairing.</p>
+            <p>Choose module styles, rounded corners, and curated studio colors. For image links, get instant Markdown, HTML, and direct links.</p>
           </div>
 
           <div class="ritual-step">
             <span class="ritual-number">03</span>
             <div class="ritual-icon icon-download">↓</div>
             <h3>Take it with you</h3>
-            <p>Download a high-resolution PNG or infinitely scalable vector SVG for print.</p>
+            <p>Download high-res PNG, infinitely scalable vector SVG, or copy generated image links directly to your clipboard.</p>
           </div>
         </div>
       </section>
@@ -323,12 +489,57 @@
     <!-- Footer -->
     <footer class="site-footer">
       <div class="footer-left">
-        <span>Built for the in-between moments.</span>
+        <span>Built for the in-between moments · QR Forge Studio</span>
       </div>
       <div class="footer-right">
-        <span>QR / FORGE <span class="footer-accent">●</span> STUDIO EDITION</span>
+        <span>QR / FORGE <span class="footer-accent">●</span> 3-IN-1 STUDIO EDITION</span>
       </div>
     </footer>
+  </div>
+
+  <!-- Cloud Storage Settings Modal -->
+  <div class="modal-backdrop" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-dialog-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <div class="section-kicker">SETTINGS</div>
+          <h3 id="settings-dialog-title">Cloud Storage Provider</h3>
+        </div>
+        <button type="button" class="modal-close-btn" id="close-settings" aria-label="Close dialog">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="settings-card active">
+          <div class="settings-card-head">
+            <span class="settings-provider-icon">⚡</span>
+            <div>
+              <strong>Instant Cloud Engine (Default)</strong>
+              <small>Zero setup required. Ready out of the box.</small>
+            </div>
+            <span class="settings-badge">Active</span>
+          </div>
+          <p class="settings-card-desc">Images are hosted automatically with fast CDN delivery and direct mobile scan compatibility.</p>
+        </div>
+
+        <div class="settings-field-group">
+          <label class="field-label" for="imgbb-key-input">
+            <span>ImgBB API Key (Optional for Permanent Storage)</span>
+            <span class="optional-badge">Optional</span>
+          </label>
+          <input type="text" id="imgbb-key-input" placeholder="Paste your ImgBB API key (optional)" autocomplete="off" />
+          <p class="field-hint">
+            Want permanent image hosting? Get a free key at 
+            <a href="https://api.imgbb.com/" target="_blank" rel="noopener noreferrer" class="hint-link">api.imgbb.com ↗</a>.
+            It will be stored securely in your browser.
+          </p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="modal-btn secondary" id="reset-settings-btn">Reset to Default</button>
+        <button type="button" class="modal-btn primary" id="save-settings-btn">Save Settings</button>
+      </div>
+    </div>
   </div>
 
   <!-- Mobile Floating Quick Preview Pill -->

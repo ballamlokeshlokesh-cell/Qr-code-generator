@@ -1,82 +1,89 @@
-# QR Forge
+# QR Forge Studio
 
-QR Forge is a lightweight web app for generating QR codes from URLs or uploaded images. It includes a modern single-page interface, customizable QR styling, and a small Node.js server for serving the app and handling uploads.
+QR Forge Studio is a studio-grade, lightweight web application for creating beautiful customizable QR codes and generating instant public web links from images.
 
-## Features
+It features an editorial, high-contrast design system, customizable QR shapes and color palettes, client-side zero-configuration cloud hosting, and multiple export options.
 
-- Generate QR codes from a URL or text destination
-- Generate QR codes for uploaded images by hosting the original image and encoding its public URL
-- Accept a wide range of common image types: PNG, JPG, WEBP, GIF, AVIF, HEIC, BMP, and other browser-supported image formats
-- Customize QR appearance:
-  - dot shape
-  - corner shape
-  - foreground color
-  - background color
-- Preview and download the generated QR code as a PNG or SVG
-- Built-in health check endpoint for service monitoring
-- Docker-ready deployment
-- Local upload fallback when external durable storage is unavailable
+---
 
-## Project structure
+## 3 Core Capabilities
 
-- `index.html` — frontend markup
-- `styles.css` — styling for the app
-- `app.js` — client-side QR generation logic and UI behavior
-- `server.js` — HTTP server and upload handling
-- `Dockerfile` — container build for deployment
-- `app.config.ts` — app configuration metadata
-- `manus-routes.json` — route metadata
-- `TODO.md` — project notes and future improvements
+### 1. ↗ URL & Text to QR Code
+- Convert any URL or plain text into a high-precision QR code.
+- Auto-prepends `https://` when required.
+- Quick preset destinations (Launch page, Menu link, Map pin, GitHub).
 
-## Tech stack
+### 2. ▦ Image to QR Code (Scan to View)
+- Upload any image format (PNG, JPG, WEBP, GIF, SVG).
+- Automatically hosts the full-resolution image on the cloud with zero setup.
+- Encodes the hosted public URL into the QR code so any smartphone camera can scan and view the original picture immediately.
 
-- HTML, CSS, JavaScript
-- Node.js runtime
-- QR code rendering via `QRCodeStyling`
-- Docker for containerized deployment
+### 3. 🔗 Image to Link Generator (NEW)
+- Instant image hosting and link generator.
+- Generates multiple shareable formats with one-click copying:
+  - **Shareable Page Link** (opens the image on a clean mobile-friendly viewer)
+  - **Direct Image URL** (raw `.png` / `.jpg` file link)
+  - **Markdown Code** (`![image](url)` for GitHub, Reddit, Discord)
+  - **HTML Embed Code** (`<img src="..." />` for websites and blogs)
+  - **BBCode** (`[img]url[/img]` for forums)
+- Live asset metadata: dimensions, file size, and file format.
+- Instant switch: convert your newly generated image link into a QR code with a single click.
 
-## Run locally
+---
 
-1. Clone the repository
-2. Start the app:
+## Studio Styling & Export
 
+- **Module Shapes**: Soft rounded, Classic square, Dot matrix, Classy, Classy rounded, Extra rounded.
+- **Corner Shapes**: Extra rounded, Square, Dot.
+- **Color Customization**: Real-time foreground and background color pickers with hex labels.
+- **Curated Palettes**: Classic Noir, Acid Studio, Coral Warmth, Sage Moss, Acid Dark.
+- **Export Formats**:
+  - High-resolution **PNG** (720 × 720 px)
+  - Infinitely scalable **Vector SVG** for print and graphic design
+  - Copy QR Image directly to clipboard
+  - Copy destination link directly
+
+---
+
+## Cloud Storage Engine
+
+- **Default Cloud Engine**: Powered by instant zero-friction cloud hosting with global CDN delivery. No registration or API keys needed.
+- **Custom ImgBB Support**: Option in Storage Settings to connect a personal free [ImgBB API Key](https://api.imgbb.com/) for permanent image hosting.
+- **Local Fallback**: Automatically falls back to local server storage when running offline or with the included Node.js server.
+
+---
+
+## Quick Start
+
+### Option 1: Static Hosting (GitHub Pages / Vercel / Netlify)
+The frontend is completely self-contained. You can deploy it to **GitHub Pages**, open `index.html` in any browser, or use Live Server.
+
+### Option 2: Run with Node.js
 ```bash
+# Start the server
 node server.js
+
+# Or with npm
+npm start
 ```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-3. Open the application in a browser at:
-
-```text
-http://localhost:3000
-```
-
-If you want to use Docker:
-
+### Option 3: Docker
 ```bash
 docker build -t qr-forge .
 docker run -p 3000:3000 qr-forge
 ```
 
-## Image upload behavior
+---
 
-The app supports image uploads directly from the browser. When `MANUS_API_URL` and `MANUS_API_KEY` are configured, uploaded originals are stored in managed durable storage. If those environment variables are not set, the app automatically stores the uploaded image locally as a fallback so the QR code can still be generated.
+## Tech Stack
 
-This means users can upload and generate QR codes from the image without the app failing when external storage is unavailable.
+- **HTML5 & Vanilla CSS3**: Custom editorial studio design system, responsive layout, dark/light theme toggle.
+- **Modern JavaScript**: Client-side QR rendering via `QRCodeStyling`, async image uploads with upload progress tracking, clipboard API integration.
+- **Node.js**: Minimal zero-dependency HTTP server with CORS and upload endpoints.
 
-## Environment variables
+---
 
-The app can optionally use the following environment variables for durable image storage:
+## License
 
-- `MANUS_API_URL`
-- `MANUS_API_KEY`
-
-If these are not set, image uploads still work through the local fallback route.
-
-## API endpoints
-
-- `GET /api/health` — returns service health status
-- `POST /api/images` — uploads an image for QR generation workflows
-
-## Notes
-
-This project is designed as a simple, self-contained QR generator with minimal dependencies and a focus on quick local or containerized use.
+MIT

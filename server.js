@@ -34,7 +34,10 @@ function sendJson(response, status, payload) {
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(body),
-    'Cache-Control': 'no-store'
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, HEAD',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range'
   });
   response.end(body);
 }
@@ -152,6 +155,11 @@ async function uploadImage(request, response) {
 
 function staticFileFor(urlPath) {
   const decoded = decodeURIComponent(urlPath.split('?')[0]);
+  if (decoded.startsWith('/uploads/')) {
+    const fileName = path.basename(decoded);
+    const filePath = path.join(UPLOAD_DIR, fileName);
+    return filePath.startsWith(UPLOAD_DIR) ? filePath : null;
+  }
   const relative = decoded === '/' ? 'index.html' : decoded.replace(/^\//, '');
   if (!relative || relative.includes('..') || relative.includes('\\')) return null;
   const filePath = path.join(PUBLIC_DIR, relative);
@@ -160,6 +168,18 @@ function staticFileFor(urlPath) {
 
 const server = http.createServer(async (request, response) => {
   const requestUrl = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+  
+  if (request.method === 'OPTIONS') {
+    response.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, HEAD',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range',
+      'Access-Control-Max-Age': '86400'
+    });
+    response.end();
+    return;
+  }
+
   if (request.method === 'GET' && requestUrl.pathname === '/api/health') {
     sendJson(response, 200, { ok: true, service: 'qrforge' });
     return;
@@ -185,7 +205,8 @@ const server = http.createServer(async (request, response) => {
     response.writeHead(200, {
       'Content-Type': MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream',
       'Content-Length': stats.size,
-      'Cache-Control': 'no-cache'
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*'
     });
     if (request.method === 'HEAD') response.end();
     else fs.createReadStream(filePath).pipe(response);

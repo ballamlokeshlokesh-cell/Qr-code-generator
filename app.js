@@ -1,40 +1,61 @@
 (() => {
+  // Application State
   const state = {
-    mode: 'url',
-    photo: null,
+    mode: 'url', // 'url' | 'photos' | 'link'
+    photo: null, // { file, name, size, dimensions, preview, pageUrl, directUrl, uploading, progress }
+    linkImage: null, // { file, name, size, dimensions, preview, pageUrl, directUrl, uploading, progress }
     qrCodes: [],
-    debounceTimer: null
+    debounceTimer: null,
+    imgbbApiKey: localStorage.getItem('qrforge_imgbb_key') || ''
   };
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
 
+  // DOM Elements
   const urlInput = $('#url-input');
   const outputArea = $('#output-area');
   const errorMessage = $('#error-message');
   const previewCount = $('#preview-count');
+  const previewKicker = $('#preview-kicker');
+  const previewTitle = $('#preview-title');
   const photoSlots = $('#photo-slots');
   const photoStatus = $('#photo-upload-status');
+  const linkSlots = $('#link-slots');
+  const linkStatus = $('#link-upload-status');
   const themeToggle = $('#theme-toggle');
+  const settingsToggle = $('#settings-toggle');
+  const settingsModal = $('#settings-modal');
   const toast = $('#toast');
   const mobilePreviewBtn = $('#mobile-preview-btn');
+  const engineStatus = $('#engine-status');
 
-  // Retrieve current styling options
+  // Styling Settings
   const settings = () => ({
-    dots: $('#module-shape').value,
-    cornersSquare: $('#corner-shape').value,
-    foreground: $('#foreground-color').value,
-    background: $('#background-color').value
+    dots: $('#module-shape')?.value || 'rounded',
+    cornersSquare: $('#corner-shape')?.value || 'extra-rounded',
+    foreground: $('#foreground-color')?.value || '#14231d',
+    background: $('#background-color')?.value || '#ffffff'
   });
 
+  // Utilities
   const escapeHtml = (text) =>
-    String(text).replace(/[&<>'"]/g, (char) => ({
+    String(text || '').replace(/[&<>'"]/g, (char) => ({
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',
       "'": '&#39;',
       '"': '&quot;'
     }[char]));
+
+  const formatBytes = (bytes, decimals = 1) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  };
 
   const setError = (message = '') => {
     if (errorMessage) errorMessage.textContent = message;
@@ -44,7 +65,10 @@
     if (photoStatus) photoStatus.textContent = message;
   };
 
-  // Toast notification
+  const setLinkStatus = (message) => {
+    if (linkStatus) linkStatus.textContent = message;
+  };
+
   function showToast(message, duration = 2500) {
     if (!toast) return;
     toast.textContent = message;
@@ -53,6 +77,162 @@
     toast._timeout = setTimeout(() => {
       toast.classList.remove('show');
     }, duration);
+  }
+
+  async function copyText(text, btnElement = null) {
+    if (!text) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      showToast('Copied to clipboard!');
+      if (btnElement) {
+        const originalHtml = btnElement.innerHTML;
+        btnElement.classList.add('copied');
+        btnElement.innerHTML = `<span>✓ Copied!</span>`;
+        setTimeout(() => {
+          btnElement.classList.remove('copied');
+          btnElement.innerHTML = originalHtml;
+        }, 1800);
+      }
+    } catch {
+      showToast('Could not copy to clipboard.');
+    }
+  }
+
+  // Get image dimensions asynchronously
+  function getImageDimensions(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.onerror = () => {
+        resolve({ width: 0, height: 0 });
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  // Unified Image Upload Engine
+  function uploadImageFile(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      // 1. If user configured personal ImgBB key
+      if (state.imgbbApiKey) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.imgbb.com/1/upload?key=${encodeURIComponent(state.imgbbApiKey)}`);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && onProgress) {
+            onProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (xhr.status === 200 && data?.data?.url) {
+              resolve({
+                pageUrl: data.data.url_viewer || data.data.url,
+                directUrl: data.data.url,
+                provider: 'ImgBB'
+              });
+              return;
+            }
+            throw new Error(data?.error?.message || 'ImgBB upload failed');
+          } catch (err) {
+            uploadToTmpFiles(file, onProgress).then(resolve).catch(reject);
+          }
+        };
+
+        xhr.onerror = () => {
+          uploadToTmpFiles(file, onProgress).then(resolve).catch(reject);
+        };
+
+        xhr.send(formData);
+        return;
+      }
+
+      // 2. Default Zero-Friction Instant Cloud (tmpfiles.org)
+      uploadToTmpFiles(file, onProgress).then(resolve).catch((err) => {
+        // 3. Fallback to local server endpoint if running node server
+        uploadToLocalServer(file, onProgress).then(resolve).catch(() => {
+          reject(err);
+        });
+      });
+    });
+  }
+
+  function uploadToTmpFiles(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://tmpfiles.org/api/v1/upload');
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status === 200 && data?.status === 'success' && data?.data?.url) {
+            const pageUrl = data.data.url;
+            const directUrl = data.data.url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
+            resolve({ pageUrl, directUrl, provider: 'tmpfiles' });
+            return;
+          }
+          reject(new Error(data?.message || 'Cloud upload returned an error.'));
+        } catch (e) {
+          reject(new Error('Invalid response from cloud storage.'));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Network error reaching cloud image host.'));
+      };
+
+      xhr.timeout = 45000;
+      xhr.ontimeout = () => {
+        reject(new Error('Upload timed out. Please try a smaller image.'));
+      };
+
+      xhr.send(formData);
+    });
+  }
+
+  async function uploadToLocalServer(file, onProgress) {
+    if (onProgress) onProgress(50);
+    const response = await fetch('/api/images', {
+      method: 'POST',
+      headers: { 'Content-Type': file.type },
+      body: file
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.path) throw new Error(result.error || 'Local upload failed');
+    if (onProgress) onProgress(100);
+    const fullUrl = new URL(result.path, window.location.origin).href;
+    return { pageUrl: fullUrl, directUrl: fullUrl, provider: 'local' };
   }
 
   // Theme Management
@@ -70,8 +250,63 @@
     }
   }
 
+  // Settings Modal Management
+  function initSettings() {
+    const keyInput = $('#imgbb-key-input');
+    const saveBtn = $('#save-settings-btn');
+    const resetBtn = $('#reset-settings-btn');
+    const closeBtn = $('#close-settings');
+
+    const updateEngineBadge = () => {
+      if (engineStatus) {
+        engineStatus.textContent = state.imgbbApiKey ? 'ImgBB Cloud Active' : 'Cloud Engine Active';
+      }
+    };
+
+    if (keyInput) keyInput.value = state.imgbbApiKey;
+    updateEngineBadge();
+
+    settingsToggle?.addEventListener('click', () => {
+      if (keyInput) keyInput.value = state.imgbbApiKey;
+      settingsModal?.classList.add('is-open');
+    });
+
+    closeBtn?.addEventListener('click', () => {
+      settingsModal?.classList.remove('is-open');
+    });
+
+    settingsModal?.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.classList.remove('is-open');
+      }
+    });
+
+    saveBtn?.addEventListener('click', () => {
+      const key = (keyInput?.value || '').trim();
+      state.imgbbApiKey = key;
+      if (key) {
+        localStorage.setItem('qrforge_imgbb_key', key);
+        showToast('ImgBB API key saved!');
+      } else {
+        localStorage.removeItem('qrforge_imgbb_key');
+        showToast('Using Default Instant Cloud.');
+      }
+      updateEngineBadge();
+      settingsModal?.classList.remove('is-open');
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      state.imgbbApiKey = '';
+      localStorage.removeItem('qrforge_imgbb_key');
+      if (keyInput) keyInput.value = '';
+      updateEngineBadge();
+      showToast('Reset to Default Instant Cloud.');
+      settingsModal?.classList.remove('is-open');
+    });
+  }
+
   function normalizeUrl(value) {
-    const trimmed = value.trim();
+    const trimmed = (value || '').trim();
     if (!trimmed) return null;
     const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
     try {
@@ -83,8 +318,8 @@
   }
 
   function updateColorLabels() {
-    const fg = $('#foreground-color').value;
-    const bg = $('#background-color').value;
+    const fg = $('#foreground-color')?.value || '#14231d';
+    const bg = $('#background-color')?.value || '#ffffff';
 
     const fgLabel = $('#foreground-value');
     const bgLabel = $('#background-value');
@@ -97,19 +332,18 @@
     if (bgPill) bgPill.style.backgroundColor = bg;
   }
 
-  // Click on color wrapper opens color input
+  // Click on color wrapper opens color picker
   $('#fg-control-wrap')?.addEventListener('click', (e) => {
-    if (e.target !== $('#foreground-color')) {
-      $('#foreground-color').click();
-    }
+    if (e.target !== $('#foreground-color')) $('#foreground-color')?.click();
   });
 
   $('#bg-control-wrap')?.addEventListener('click', (e) => {
-    if (e.target !== $('#background-color')) {
-      $('#background-color').click();
-    }
+    if (e.target !== $('#background-color')) $('#background-color')?.click();
   });
 
+  // =========================================================================
+  // TAB 2: PHOTO TO QR MODE
+  // =========================================================================
   function renderPhotoSlot() {
     if (!photoSlots) return;
 
@@ -120,11 +354,11 @@
             <img class="photo-preview" src="${state.photo.preview}" alt="${escapeHtml(state.photo.name)} preview" />
           </label>
           <div class="photo-overlay">
-            <span>${state.photo.uploading ? 'Uploading original…' : escapeHtml(state.photo.name)}</span>
+            <span>${state.photo.uploading ? 'Uploading to cloud…' : escapeHtml(state.photo.name)}</span>
             <button type="button" id="remove-photo">Remove</button>
           </div>
         </div>`
-      : `<div class="photo-slot" id="drop-zone">
+      : `<div class="photo-slot" id="photo-drop-zone">
           <input id="photo-input" type="file" accept="image/*" />
           <label for="photo-input">
             <span class="slot-placeholder">
@@ -136,24 +370,30 @@
                 </svg>
               </span>
               <strong>Click or drag an image here</strong>
-              <small>PNG, JPG, WEBP, GIF up to 100 MB · Full size retained</small>
+              <small>PNG, JPG, WEBP, GIF · Full resolution hosted for scanning</small>
             </span>
           </label>
         </div>`;
 
-    $('#photo-input')?.addEventListener('change', handlePhotoUpload);
+    $('#photo-input')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) processPhotoQrFile(file);
+    });
 
     $('#remove-photo')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (state.photo?.preview?.startsWith('blob:')) URL.revokeObjectURL(state.photo.preview);
       state.photo = null;
       setError('');
-      setPhotoStatus('Full-size original will be hosted for scan access.');
+      setPhotoStatus('Full-size image will be hosted for instant scan access.');
+      $('#photo-progress-wrap')?.classList.add('is-hidden');
+      $('#photo-hosted-box')?.classList.add('is-hidden');
       renderPhotoSlot();
+      generate();
     });
 
-    // Drag and drop events
-    const dropZone = $('#drop-zone');
+    // Drag and drop events for Photo Slot
+    const dropZone = $('#photo-drop-zone');
     if (dropZone) {
       ['dragenter', 'dragover'].forEach((eventName) => {
         dropZone.addEventListener(eventName, (e) => {
@@ -173,66 +413,352 @@
 
       dropZone.addEventListener('drop', (e) => {
         const file = e.dataTransfer?.files?.[0];
-        if (file) processImageFile(file);
+        if (file) processPhotoQrFile(file);
       });
     }
   }
 
-  async function handlePhotoUpload(event) {
-    const file = event.target.files?.[0];
-    if (file) processImageFile(file);
-  }
-
-  async function processImageFile(file) {
+  async function processPhotoQrFile(file) {
     if (!file.type.startsWith('image/')) {
-      setError('Please choose an image file (PNG, JPG, WEBP, GIF, AVIF, or HEIC).');
+      setError('Please choose a valid image file (PNG, JPG, WEBP, GIF, SVG).');
       return;
     }
+
     if (state.photo?.preview?.startsWith('blob:')) URL.revokeObjectURL(state.photo.preview);
     const preview = URL.createObjectURL(file);
-    state.photo = { name: file.name, preview, publicUrl: null, uploading: true };
+    const dims = await getImageDimensions(file);
+
+    state.photo = {
+      file,
+      name: file.name,
+      size: formatBytes(file.size),
+      dimensions: dims.width ? `${dims.width} × ${dims.height}` : 'Custom',
+      preview,
+      pageUrl: null,
+      directUrl: null,
+      uploading: true,
+      progress: 0
+    };
+
     setError('');
-    setPhotoStatus('Uploading the original image…');
+    setPhotoStatus('Uploading image to cloud…');
     renderPhotoSlot();
 
+    const progressWrap = $('#photo-progress-wrap');
+    const progressFill = $('#photo-progress-fill');
+    const progressPct = $('#photo-progress-pct');
+    const progressStatus = $('#photo-progress-status');
+
+    if (progressWrap) progressWrap.classList.remove('is-hidden');
+    if (progressFill) progressFill.style.width = '10%';
+    if (progressPct) progressPct.textContent = '10%';
+
     try {
-      const response = await fetch('/api/images', {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file
+      const uploadRes = await uploadImageFile(file, (percent) => {
+        if (progressFill) progressFill.style.width = `${percent}%`;
+        if (progressPct) progressPct.textContent = `${percent}%`;
+        if (progressStatus) progressStatus.textContent = `Uploading… ${percent}%`;
       });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.path) throw new Error(result.error || 'Upload failed');
-      state.photo = {
-        ...state.photo,
-        publicUrl: new URL(result.path, window.location.origin).href,
-        uploading: false
-      };
-      setPhotoStatus('Original image hosted. Ready to generate QR code.');
+
+      state.photo.pageUrl = uploadRes.pageUrl;
+      state.photo.directUrl = uploadRes.directUrl;
+      state.photo.uploading = false;
+
+      if (progressFill) progressFill.style.width = '100%';
+      if (progressPct) progressPct.textContent = '100%';
+      if (progressStatus) progressStatus.textContent = 'Image hosted successfully!';
+
+      setTimeout(() => {
+        progressWrap?.classList.add('is-hidden');
+      }, 1000);
+
+      setPhotoStatus('Image hosted online. QR code ready to scan!');
+
+      // Show destination box
+      const hostedBox = $('#photo-hosted-box');
+      const hostedUrlInput = $('#photo-hosted-url');
+      if (hostedBox && hostedUrlInput) {
+        hostedBox.classList.remove('is-hidden');
+        hostedUrlInput.value = state.photo.pageUrl;
+      }
+
       renderPhotoSlot();
       generate();
+      showToast('Image uploaded and QR code ready!');
     } catch (error) {
       URL.revokeObjectURL(preview);
       state.photo = null;
       renderPhotoSlot();
-      setPhotoStatus('Full-size original will be hosted for scan access.');
-      setError(error.message || 'The original image could not be uploaded. Try again.');
+      progressWrap?.classList.add('is-hidden');
+      setPhotoStatus('Full-size image will be hosted for instant scan access.');
+      setError(error.message || 'The image could not be uploaded. Please try again.');
     }
   }
 
+  $('#photo-copy-hosted-btn')?.addEventListener('click', (e) => {
+    const url = $('#photo-hosted-url')?.value;
+    if (url) copyText(url, e.currentTarget);
+  });
+
+  // =========================================================================
+  // TAB 3: IMAGE TO LINK GENERATOR (NEW FEATURE)
+  // =========================================================================
+  function renderLinkSlot() {
+    if (!linkSlots) return;
+
+    linkSlots.innerHTML = state.linkImage
+      ? `<div class="photo-slot has-image">
+          <input id="link-file-input" type="file" accept="image/*" />
+          <label for="link-file-input" aria-label="Replace image">
+            <img class="photo-preview" src="${state.linkImage.preview}" alt="${escapeHtml(state.linkImage.name)} preview" />
+          </label>
+          <div class="photo-overlay">
+            <span>${state.linkImage.uploading ? 'Uploading to cloud…' : escapeHtml(state.linkImage.name)}</span>
+            <button type="button" id="remove-link-image">Remove</button>
+          </div>
+        </div>`
+      : `<div class="photo-slot" id="link-drop-zone">
+          <input id="link-file-input" type="file" accept="image/*" />
+          <label for="link-file-input">
+            <span class="slot-placeholder">
+              <span class="slot-number">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+              </span>
+              <strong>Click or drag any image here</strong>
+              <small>Generates instant shareable links, Markdown, HTML embed &amp; direct URLs</small>
+            </span>
+          </label>
+        </div>`;
+
+    $('#link-file-input')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) processImageToLink(file);
+    });
+
+    $('#remove-link-image')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearLinkState();
+    });
+
+    // Drag and drop for Link Slot
+    const dropZone = $('#link-drop-zone');
+    if (dropZone) {
+      ['dragenter', 'dragover'].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add('drag-over');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove('drag-over');
+        });
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer?.files?.[0];
+        if (file) processImageToLink(file);
+      });
+    }
+  }
+
+  function clearLinkState() {
+    if (state.linkImage?.preview?.startsWith('blob:')) URL.revokeObjectURL(state.linkImage.preview);
+    state.linkImage = null;
+    setError('');
+    setLinkStatus('Drop or select an image to generate public web links.');
+    $('#link-progress-wrap')?.classList.add('is-hidden');
+    $('#link-results')?.classList.add('is-hidden');
+    renderLinkSlot();
+    generate();
+  }
+
+  async function processImageToLink(file) {
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose a valid image file (PNG, JPG, WEBP, GIF, SVG).');
+      return;
+    }
+
+    if (state.linkImage?.preview?.startsWith('blob:')) URL.revokeObjectURL(state.linkImage.preview);
+    const preview = URL.createObjectURL(file);
+    const dims = await getImageDimensions(file);
+
+    state.linkImage = {
+      file,
+      name: file.name,
+      size: formatBytes(file.size),
+      dimensions: dims.width ? `${dims.width} × ${dims.height}` : 'Custom',
+      mimeType: file.type.split('/')[1]?.toUpperCase() || 'IMAGE',
+      preview,
+      pageUrl: null,
+      directUrl: null,
+      uploading: true,
+      progress: 0
+    };
+
+    setError('');
+    setLinkStatus('Uploading image to cloud…');
+    $('#link-results')?.classList.add('is-hidden');
+    renderLinkSlot();
+
+    const progressWrap = $('#link-progress-wrap');
+    const progressFill = $('#link-progress-fill');
+    const progressPct = $('#link-progress-pct');
+    const progressStatus = $('#link-progress-status');
+
+    if (progressWrap) progressWrap.classList.remove('is-hidden');
+    if (progressFill) progressFill.style.width = '10%';
+    if (progressPct) progressPct.textContent = '10%';
+
+    try {
+      const uploadRes = await uploadImageFile(file, (percent) => {
+        if (progressFill) progressFill.style.width = `${percent}%`;
+        if (progressPct) progressPct.textContent = `${percent}%`;
+        if (progressStatus) progressStatus.textContent = `Uploading… ${percent}%`;
+      });
+
+      state.linkImage.pageUrl = uploadRes.pageUrl;
+      state.linkImage.directUrl = uploadRes.directUrl;
+      state.linkImage.uploading = false;
+
+      if (progressFill) progressFill.style.width = '100%';
+      if (progressPct) progressPct.textContent = '100%';
+      if (progressStatus) progressStatus.textContent = 'Image hosted successfully!';
+
+      setTimeout(() => {
+        progressWrap?.classList.add('is-hidden');
+      }, 1000);
+
+      setLinkStatus('Links generated successfully! Click any button to copy.');
+
+      // Populate results fields
+      const resultsWrap = $('#link-results');
+      if (resultsWrap) {
+        resultsWrap.classList.remove('is-hidden');
+
+        $('#asset-meta-name').textContent = state.linkImage.name;
+        $('#asset-meta-size').textContent = state.linkImage.size;
+        $('#asset-meta-dims').textContent = state.linkImage.dimensions;
+        $('#asset-meta-type').textContent = state.linkImage.mimeType;
+
+        const pUrl = state.linkImage.pageUrl;
+        const dUrl = state.linkImage.directUrl || pUrl;
+
+        $('#out-page-url').value = pUrl;
+        $('#out-direct-url').value = dUrl;
+        $('#out-markdown').value = `![${state.linkImage.name}](${dUrl})`;
+        $('#out-html').value = `<img src="${dUrl}" alt="${escapeHtml(state.linkImage.name)}" />`;
+        $('#out-bbcode').value = `[img]${dUrl}[/img]`;
+
+        const openBtn = $('#out-page-open');
+        if (openBtn) openBtn.href = pUrl;
+      }
+
+      renderLinkSlot();
+      generate();
+      showToast('Links generated successfully!');
+    } catch (error) {
+      URL.revokeObjectURL(preview);
+      state.linkImage = null;
+      renderLinkSlot();
+      progressWrap?.classList.add('is-hidden');
+      setLinkStatus('Drop or select an image to generate public web links.');
+      setError(error.message || 'Image upload failed. Please try again.');
+    }
+  }
+
+  // Copy button listeners for Link generator inputs
+  $$('#link-results .btn-copy').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const targetId = btn.dataset.target;
+      const input = $(`#${targetId}`);
+      if (input) copyText(input.value, e.currentTarget);
+    });
+  });
+
+  // "Make QR Code for this Image" button in link generator
+  $('#link-make-qr-btn')?.addEventListener('click', () => {
+    if (!state.linkImage?.pageUrl) return;
+    // Copy linkImage to photo state and switch to photos mode
+    state.photo = {
+      ...state.linkImage,
+      uploading: false
+    };
+    switchMode('photos');
+    showToast('Switched to QR Code mode!');
+  });
+
+  $('#link-clear-btn')?.addEventListener('click', clearLinkState);
+
+  // =========================================================================
+  // MODE SWITCHING (URL, PHOTOS, LINK)
+  // =========================================================================
   function switchMode(mode) {
     state.mode = mode;
+
     $$('.mode-tab').forEach((tab) => {
       const active = tab.dataset.mode === mode;
       tab.classList.toggle('is-active', active);
       tab.setAttribute('aria-selected', String(active));
     });
+
     $('#url-panel').classList.toggle('is-hidden', mode !== 'url');
     $('#photos-panel').classList.toggle('is-hidden', mode !== 'photos');
+    $('#link-panel').classList.toggle('is-hidden', mode !== 'link');
+
+    // Update section kickers and titles
+    const step1Kicker = $('#step-1-kicker');
+    const step1Title = $('#step-1-title');
+    const generateBtnLabel = $('#generate-btn-label');
+    const stylingHeading = $('#styling-heading');
+    const stylingPresets = $('#styling-presets');
+    const stylingGrid = $('#styling-grid');
+    const stylingReliability = $('#styling-reliability');
+    const stepDivider = $('#step-divider');
+    const generateBtn = $('#generate-button');
+
+    if (mode === 'link') {
+      if (step1Kicker) step1Kicker.textContent = 'IMAGE HOST & LINK GENERATOR';
+      if (step1Title) step1Title.textContent = 'Upload Image · Get Public Links';
+      if (previewKicker) previewKicker.textContent = 'LIVE ASSET CARD';
+      if (previewTitle) previewTitle.textContent = 'Hosted Asset';
+
+      // Hide QR-specific controls in Link mode to keep the interface uncluttered
+      stylingHeading?.classList.add('is-hidden');
+      stylingPresets?.classList.add('is-hidden');
+      stylingGrid?.classList.add('is-hidden');
+      stylingReliability?.classList.add('is-hidden');
+      stepDivider?.classList.add('is-hidden');
+      generateBtn?.classList.add('is-hidden');
+    } else {
+      if (step1Kicker) step1Kicker.textContent = 'STEP 01 · DESTINATION';
+      if (step1Title) step1Title.textContent = mode === 'url' ? 'What should this code open?' : 'Select image to encode';
+      if (previewKicker) previewKicker.textContent = 'STEP 03 · EXPORT';
+      if (previewTitle) previewTitle.textContent = 'Live Preview';
+      if (generateBtnLabel) generateBtnLabel.textContent = 'Generate QR code';
+
+      stylingHeading?.classList.remove('is-hidden');
+      stylingPresets?.classList.remove('is-hidden');
+      stylingGrid?.classList.remove('is-hidden');
+      stylingReliability?.classList.remove('is-hidden');
+      stepDivider?.classList.remove('is-hidden');
+      generateBtn?.classList.remove('is-hidden');
+    }
+
     setError('');
     generate();
   }
 
+  // =========================================================================
+  // QR CODE GENERATION & PREVIEW RENDERING
+  // =========================================================================
   function makeQr(container, data, type = 'canvas') {
     const style = settings();
     const qr = new QRCodeStyling({
@@ -251,7 +777,7 @@
     return qr;
   }
 
-  function renderResults(item) {
+  function renderQrResults(item) {
     outputArea.innerHTML = `
       <div class="qr-results single">
         <article class="qr-card">
@@ -325,37 +851,101 @@
             showToast('QR code copied to clipboard!');
           });
         } else {
-          await navigator.clipboard.writeText(item.data);
-          showToast('Destination link copied to clipboard!');
+          await copyText(item.data);
         }
       } catch {
-        showToast('Destination copied to clipboard!');
+        await copyText(item.data);
       }
     });
 
     // Copy Link to Clipboard
     $('#copy-link-button')?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(item.data);
-        showToast('Link copied to clipboard!');
-      } catch {
-        showToast('Could not copy link.');
-      }
+      await copyText(item.data);
     });
 
     if (previewCount) previewCount.textContent = '720 × 720 px';
   }
 
+  function renderAssetCard(asset) {
+    outputArea.innerHTML = `
+      <div class="asset-preview-card">
+        <div class="asset-preview-canvas">
+          <img src="${asset.preview}" alt="${escapeHtml(asset.name)}" />
+        </div>
+        <div class="asset-card-details">
+          <h4>${escapeHtml(asset.name)}</h4>
+          <p>${escapeHtml(asset.dimensions)} · ${escapeHtml(asset.size)}</p>
+        </div>
+        <div class="asset-preview-btn-row">
+          <button type="button" class="btn-copy" id="asset-card-copy-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Copy Link</span>
+          </button>
+          <a href="${asset.pageUrl}" target="_blank" rel="noopener noreferrer" class="action-pill-btn secondary" style="min-width:0;height:38px;">
+            <span>Open Link ↗</span>
+          </a>
+        </div>
+        <div id="asset-qr-inline-wrap" style="margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line);">
+          <button type="button" class="action-pill-btn" id="toggle-asset-qr" style="width:100%;height:36px;font-size:10px;">
+            <span>▦ Generate QR Code for this Link</span>
+          </button>
+          <div id="inline-qr-container" class="is-hidden" style="margin-top:12px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <div id="inline-qr-canvas" style="width:160px; height:160px; background:#fff; border-radius:8px; padding:6px; box-shadow:0 2px 8px rgba(0,0,0,0.08);"></div>
+            <button type="button" class="btn-copy" id="download-inline-qr" style="height:32px; font-size:10px; padding:0 12px;">Download QR</button>
+          </div>
+        </div>
+      </div>`;
+
+    $('#asset-card-copy-btn')?.addEventListener('click', (e) => {
+      copyText(asset.pageUrl, e.currentTarget);
+    });
+
+    const toggleQrBtn = $('#toggle-asset-qr');
+    const inlineContainer = $('#inline-qr-container');
+    const inlineCanvas = $('#inline-qr-canvas');
+    let inlineQrInstance = null;
+
+    toggleQrBtn?.addEventListener('click', () => {
+      if (inlineContainer?.classList.contains('is-hidden')) {
+        inlineContainer.classList.remove('is-hidden');
+        inlineCanvas.innerHTML = '';
+        inlineQrInstance = new QRCodeStyling({
+          width: 160,
+          height: 160,
+          type: 'canvas',
+          data: asset.pageUrl,
+          margin: 6,
+          dotsOptions: { color: '#14231d', type: 'rounded' },
+          cornersSquareOptions: { color: '#14231d', type: 'extra-rounded' },
+          backgroundOptions: { color: '#ffffff' }
+        });
+        inlineQrInstance.append(inlineCanvas);
+        toggleQrBtn.innerHTML = `<span>Hide QR Code</span>`;
+      } else {
+        inlineContainer?.classList.add('is-hidden');
+        toggleQrBtn.innerHTML = `<span>▦ Generate QR Code for this Link</span>`;
+      }
+    });
+
+    $('#download-inline-qr')?.addEventListener('click', () => {
+      if (inlineQrInstance) {
+        inlineQrInstance.download({ name: 'qr-forge-link', extension: 'png' });
+        showToast('QR code downloaded!');
+      }
+    });
+
+    if (previewCount) previewCount.textContent = asset.dimensions;
+  }
+
   function generate() {
     setError('');
     if (typeof QRCodeStyling === 'undefined') {
-      setError('The QR renderer is loading. Please try again in a moment.');
+      setError('The QR engine is loading. Please try again in a moment.');
       return;
     }
 
-    let item;
     if (state.mode === 'url') {
-      const raw = urlInput.value.trim();
+      const raw = urlInput?.value.trim();
       if (!raw) {
         outputArea.innerHTML = `
           <div class="empty-preview">
@@ -373,13 +963,13 @@
         setError('Enter a valid URL or text destination.');
         return;
       }
-      item = {
+      renderQrResults({
         data: destination,
         filename: 'qr-forge-code',
         title: 'Link Signal',
         subtitle: destination.replace(/^https?:\/\//, '')
-      };
-    } else {
+      });
+    } else if (state.mode === 'photos') {
       if (!state.photo) {
         outputArea.innerHTML = `
           <div class="empty-preview">
@@ -392,22 +982,34 @@
           </div>`;
         return;
       }
-      if (state.photo.uploading || !state.photo.publicUrl) {
-        setError('Uploading image... Please wait a moment.');
+      if (state.photo.uploading || !state.photo.pageUrl) {
+        setError('Uploading image to cloud... Please wait a moment.');
         return;
       }
-      item = {
-        data: state.photo.publicUrl,
+      renderQrResults({
+        data: state.photo.pageUrl,
         filename: 'qr-forge-image',
-        title: 'Image Signal',
-        subtitle: 'Scan to open full-resolution image'
-      };
-    }
-
-    try {
-      renderResults(item);
-    } catch (err) {
-      setError('Could not generate QR code. Try again.');
+        title: state.photo.name,
+        subtitle: 'Scan opens full-resolution hosted image'
+      });
+    } else if (state.mode === 'link') {
+      if (!state.linkImage) {
+        outputArea.innerHTML = `
+          <div class="empty-preview">
+            <div class="empty-signal">
+              <span></span><span></span><span></span>
+              <span></span><span></span><span></span>
+              <span></span><span></span><span></span>
+            </div>
+            <p>Select an image<br /><strong>to view its hosted preview &amp; links here.</strong></p>
+          </div>`;
+        return;
+      }
+      if (state.linkImage.uploading || !state.linkImage.pageUrl) {
+        setError('Uploading image to cloud... Please wait a moment.');
+        return;
+      }
+      renderAssetCard(state.linkImage);
     }
   }
 
@@ -417,11 +1019,13 @@
     state.debounceTimer = setTimeout(generate, delay);
   }
 
-  // Event Listeners
+  // =========================================================================
+  // INITIALIZATION & EVENT LISTENERS
+  // =========================================================================
   $$('.mode-tab').forEach((tab) => tab.addEventListener('click', () => switchMode(tab.dataset.mode)));
 
   $$('.quick-chip').forEach((chip) => chip.addEventListener('click', () => {
-    urlInput.value = chip.dataset.url;
+    if (urlInput) urlInput.value = chip.dataset.url;
     switchMode('url');
     generate();
   }));
@@ -431,8 +1035,10 @@
     const fg = chip.dataset.fg;
     const bg = chip.dataset.bg;
     if (fg && bg) {
-      $('#foreground-color').value = fg;
-      $('#background-color').value = bg;
+      const fgInput = $('#foreground-color');
+      const bgInput = $('#background-color');
+      if (fgInput) fgInput.value = fg;
+      if (bgInput) bgInput.value = bg;
       updateColorLabels();
       generate();
       showToast(`Applied ${chip.getAttribute('title') || 'theme'}`);
@@ -440,8 +1046,10 @@
   }));
 
   $('#clear-url')?.addEventListener('click', () => {
-    urlInput.value = '';
-    urlInput.focus();
+    if (urlInput) {
+      urlInput.value = '';
+      urlInput.focus();
+    }
     setError('');
     generate();
   });
@@ -475,7 +1083,6 @@
       }
     });
 
-    // Show/hide floating preview button based on scroll
     window.addEventListener('scroll', () => {
       const scrollY = window.scrollY || window.pageYOffset;
       const previewRect = $('#preview-panel')?.getBoundingClientRect();
@@ -490,9 +1097,10 @@
 
   // Initialize
   initTheme();
+  initSettings();
   renderPhotoSlot();
+  renderLinkSlot();
   updateColorLabels();
-  setPhotoStatus('Full-size original will be hosted for scan access.');
 
   window.addEventListener('load', () => setTimeout(generate, 100));
 })();
