@@ -932,6 +932,217 @@
   }
 
   // =========================================================================
+  // MOBILE-SAFE EXPORT & DOWNLOAD ENGINE
+  // =========================================================================
+  // Extracts canvas to PNG Blob synchronously without async popups that mobile browsers block
+  function getCanvasPngBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!canvas) {
+          reject(new Error('Canvas not found'));
+          return;
+        }
+        const dataUrl = canvas.toDataURL('image/png');
+        const byteString = atob(dataUrl.split(',')[1]);
+        const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: mimeString });
+        resolve({ blob, dataUrl });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  // Synchronously mirrors the canvas into a high-res <img> element
+  // This enables native mobile long-press / touch-and-hold "Save to Photos" on iOS & Android
+  function mirrorCanvasToImage(container, qrInstance) {
+    if (!container) return;
+    const doMirror = () => {
+      const canvas = container.querySelector('canvas');
+      if (!canvas) return;
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        if (!dataUrl || dataUrl === 'data:,' || dataUrl.length < 500) {
+          setTimeout(doMirror, 80);
+          return;
+        }
+        let img = container.querySelector('img.qr-mirror-img');
+        if (!img) {
+          img = document.createElement('img');
+          img.className = 'qr-mirror-img';
+          img.alt = 'Scan-ready QR Code';
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          img.style.display = 'block';
+          img.style.userSelect = 'auto';
+          img.style.webkitTouchCallout = 'default';
+          container.appendChild(img);
+        }
+        img.src = dataUrl;
+        canvas.style.display = 'none';
+      } catch (err) {
+        console.warn('Canvas mirroring notice:', err);
+      }
+    };
+
+    if (qrInstance && qrInstance._canvasDrawingPromise) {
+      qrInstance._canvasDrawingPromise.then(doMirror).catch(doMirror);
+    } else {
+      setTimeout(doMirror, 100);
+    }
+  }
+
+  // Trigger mobile-safe anchor download attached to document.body
+  function triggerDownloadFromBlob(blob, filename) {
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    link.rel = 'noopener';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+    }, 3000);
+  }
+
+  // Primary Download PNG function
+  async function downloadQrPng(container, filename = 'qr-forge-code') {
+    const canvas = container?.querySelector('canvas') || outputArea?.querySelector('canvas');
+    const mirrorImg = container?.querySelector('img.qr-mirror-img') || outputArea?.querySelector('img.qr-mirror-img');
+    const safeName = (filename || 'qr-code').replace(/[^a-zA-Z0-9_-]/g, '_') + '.png';
+
+    try {
+      let blob = null;
+      if (canvas) {
+        try {
+          const res = await getCanvasPngBlob(canvas);
+          blob = res.blob;
+        } catch (e) {
+          console.warn('Canvas blob failed, trying mirror image:', e);
+        }
+      }
+
+      if (!blob && mirrorImg && mirrorImg.src && mirrorImg.src.startsWith('data:image')) {
+        const res = await fetch(mirrorImg.src);
+        blob = await res.blob();
+      }
+
+      if (blob) {
+        triggerDownloadFromBlob(blob, safeName);
+        showToast('✓ Saved to mobile storage / downloads!');
+        return;
+      }
+
+      showToast('Please generate a QR code first.');
+    } catch (err) {
+      console.warn('Blob download error:', err);
+      if (mirrorImg?.src?.startsWith('data:image')) {
+        const a = document.createElement('a');
+        a.href = mirrorImg.src;
+        a.download = safeName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => a.remove(), 1000);
+        showToast('✓ QR code downloaded!');
+      } else {
+        showToast('Download error. Touch and hold the QR code to save to Photos.');
+      }
+    }
+  }
+
+  // Native Mobile Web Share API: Saves directly to Camera Roll (iOS Photos) or Android Share
+  async function shareQrImage(container, filename = 'qr-forge-code', title = 'QR Code') {
+    const canvas = container?.querySelector('canvas') || outputArea?.querySelector('canvas');
+    const mirrorImg = container?.querySelector('img.qr-mirror-img') || outputArea?.querySelector('img.qr-mirror-img');
+    const safeName = (filename || 'qr-code').replace(/[^a-zA-Z0-9_-]/g, '_') + '.png';
+
+    try {
+      let blob = null;
+      if (canvas) {
+        try {
+          const res = await getCanvasPngBlob(canvas);
+          blob = res.blob;
+        } catch (e) {}
+      }
+
+      if (!blob && mirrorImg?.src?.startsWith('data:image')) {
+        const res = await fetch(mirrorImg.src);
+        blob = await res.blob();
+      }
+
+      if (blob) {
+        const file = new File([blob], safeName, { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: title || 'QR Code',
+            text: 'My generated QR code'
+          });
+          showToast('✓ Saved / Shared successfully!');
+          return;
+        }
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.warn('Native share failed, falling back to download:', err);
+    }
+
+    // Fallback: regular safe file download
+    downloadQrPng(container, filename);
+  }
+
+  // Vector SVG Download
+  function downloadQrSvg(data, filename = 'qr-forge-code') {
+    try {
+      const tempDiv = document.createElement('div');
+      const style = settings();
+      const svgQr = new QRCodeStyling({
+        width: 720,
+        height: 720,
+        type: 'svg',
+        data: data,
+        margin: 20,
+        qrOptions: { errorCorrectionLevel: 'M' },
+        dotsOptions: { color: style.foreground, type: style.dots },
+        cornersSquareOptions: { color: style.foreground, type: style.cornersSquare },
+        cornersDotOptions: { color: style.foreground, type: style.cornersSquare === 'dot' ? 'dot' : 'square' },
+        backgroundOptions: { color: style.background }
+      });
+      svgQr.append(tempDiv);
+
+      setTimeout(() => {
+        try {
+          const svgEl = tempDiv.querySelector('svg');
+          const safeName = (filename || 'qr-code').replace(/[^a-zA-Z0-9_-]/g, '_') + '.svg';
+          if (svgEl) {
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            triggerDownloadFromBlob(svgBlob, safeName);
+            showToast('✓ Vector SVG downloaded!');
+          } else {
+            svgQr.download({ name: safeName.replace(/\.svg$/, ''), extension: 'svg' });
+            showToast('✓ Vector SVG download started!');
+          }
+        } catch (e) {
+          svgQr.download({ name: filename, extension: 'svg' });
+        }
+      }, 60);
+    } catch (err) {
+      console.warn('SVG download error:', err);
+      showToast('Could not export SVG.');
+    }
+  }
+
+  // =========================================================================
   // QR CODE GENERATION & PREVIEW RENDERING (NEVER STUCK)
   // =========================================================================
   function makeQr(container, data, type = 'canvas') {
@@ -968,32 +1179,37 @@
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              Download PNG
+              <span>Download PNG</span>
             </button>
+            <button type="button" class="share-mobile-button" id="share-mobile-button" title="Save directly to camera roll or share to apps">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                <polyline points="16 6 12 2 8 6"></polyline>
+                <line x1="12" y1="2" x2="12" y2="15"></line>
+              </svg>
+              <span>Save to Photos / Share</span>
+            </button>
+          </div>
+          <div class="action-row-secondary">
             <button type="button" class="download-svg-button" id="download-svg-button">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                 <polyline points="2 17 12 22 22 17"></polyline>
                 <polyline points="2 12 12 17 22 12"></polyline>
               </svg>
-              Vector SVG
+              <span>Vector SVG</span>
             </button>
-          </div>
-          <div class="action-row-secondary">
             <button type="button" class="copy-image-button" id="copy-image-button">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
-              Copy Image
+              <span>Copy Image</span>
             </button>
-            <button type="button" class="copy-image-button" id="copy-link-button">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-              </svg>
-              Copy Link
-            </button>
+          </div>
+          <div class="mobile-save-hint">
+            <span>📱</span>
+            <span><strong>Mobile tip:</strong> Tap "Save to Photos" or touch &amp; hold image to save to Camera Roll</span>
           </div>
         </article>
       </div>`;
@@ -1002,17 +1218,22 @@
     const qr = makeQr(canvasContainer, item.data, 'canvas');
     state.qrCodes = [{ qr, name: item.filename, data: item.data }];
 
-    // PNG Download
+    // As soon as canvas finishes, mirror into high-res touch-saveable <img>
+    mirrorCanvasToImage(canvasContainer, qr);
+
+    // PNG Download - Attached DOM anchor with binary Blob
     $('#download-button')?.addEventListener('click', () => {
-      qr.download({ name: item.filename, extension: 'png' });
-      showToast('PNG download started!');
+      downloadQrPng(canvasContainer, item.filename);
     });
 
-    // SVG Download
+    // Save to Photos / Native Web Share API
+    $('#share-mobile-button')?.addEventListener('click', () => {
+      shareQrImage(canvasContainer, item.filename, item.title);
+    });
+
+    // Vector SVG Download
     $('#download-svg-button')?.addEventListener('click', () => {
-      const svgQr = makeQr(document.createElement('div'), item.data, 'svg');
-      svgQr.download({ name: item.filename, extension: 'svg' });
-      showToast('Vector SVG download started!');
+      downloadQrSvg(item.data, item.filename);
     });
 
     // Copy Image to Clipboard
@@ -1020,22 +1241,15 @@
       try {
         const canvas = canvasContainer.querySelector('canvas');
         if (canvas && navigator.clipboard && window.ClipboardItem) {
-          canvas.toBlob(async (blob) => {
-            if (!blob) throw new Error('Blob failed');
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-            showToast('QR code copied to clipboard!');
-          });
+          const { blob } = await getCanvasPngBlob(canvas);
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showToast('✓ QR code copied to clipboard!');
         } else {
           await copyText(item.data);
         }
       } catch {
         await copyText(item.data);
       }
-    });
-
-    // Copy Link to Clipboard
-    $('#copy-link-button')?.addEventListener('click', async () => {
-      await copyText(item.data);
     });
 
     if (previewCount) previewCount.textContent = '720 × 720 px';
@@ -1095,6 +1309,7 @@
           backgroundOptions: { color: '#ffffff' }
         });
         inlineQrInstance.append(inlineCanvas);
+        mirrorCanvasToImage(inlineCanvas, inlineQrInstance);
         toggleQrBtn.innerHTML = `<span>Hide QR Code</span>`;
       } else {
         inlineContainer?.classList.add('is-hidden');
@@ -1103,9 +1318,8 @@
     });
 
     $('#download-inline-qr')?.addEventListener('click', () => {
-      if (inlineQrInstance) {
-        inlineQrInstance.download({ name: 'qr-forge-link', extension: 'png' });
-        showToast('QR code downloaded!');
+      if (inlineCanvas) {
+        downloadQrPng(inlineCanvas, 'qr-forge-link');
       }
     });
 

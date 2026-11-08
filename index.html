@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f6f7f2" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="QR Forge Studio — Studio-quality QR Code Generator and instant Image to Link hosting. Turn links and images into QR codes or shareable web links with embed codes." />
   <meta property="og:title" content="QR Forge Studio — QR Code & Image to Link Generator" />
   <meta property="og:description" content="Turn links and images into precision-styled QR codes or instant shareable public web links in seconds." />
@@ -12,13 +12,15 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,500;1,600&display=swap" rel="stylesheet" />
   
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <script src="https://unpkg.com/qr-code-styling@1.8.4/lib/qr-code-styling.js" defer></script>
-  <script src="app.js?v=5" defer></script>
+  <script src="app.js?v=6" defer></script>
 </head>
 <body>
+  <div class="ambient-glow" aria-hidden="true"></div>
+  
   <div class="app-shell">
     <!-- Header / Navbar -->
     <header class="topbar">
@@ -29,7 +31,7 @@
         </div>
         <div class="brand-text">
           <span class="brand-name">QR<span>/</span>FORGE</span>
-          <span class="brand-sub">STUDIO</span>
+          <span class="brand-sub">STUDIO EDITION</span>
         </div>
       </a>
 
@@ -70,26 +72,28 @@
     </header>
 
     <main id="main-content">
-      <!-- Hero Section with radar watermark -->
+      <!-- Classy Hero Section -->
       <section class="hero" aria-labelledby="page-title">
-        <div class="eyebrow">
-          <span class="eyebrow-line"></span>
-          <span>Signal Studio · QR &amp; Link Engine</span>
+        <div class="hero-pill">
+          <span class="hero-pill-dot"></span>
+          <span>Studio Grade Signal Engine · 3-in-1 Platform</span>
         </div>
 
         <h1 id="page-title">
-          Make a QR code &amp; link<br />
-          <em>worth sharing.</em>
+          Craft precision QR codes<br />
+          <span class="gradient-text">&amp; shareable links.</span>
         </h1>
 
         <p class="hero-copy">
-          Turn links, text, and photos into precision-styled QR codes, or upload any image to generate instant shareable links, direct URLs, Markdown, and embed codes.
+          Turn links, text, and photos into beautifully styled, scan-safe QR codes, or upload any image to generate instant public web links, direct URLs, Markdown, and embed codes.
         </p>
 
         <div class="hero-meta">
-          <span><strong>01</strong>Choose a source</span>
-          <span><strong>02</strong>Host &amp; shape signal</span>
-          <span><strong>03</strong>Export &amp; share anywhere</span>
+          <div class="meta-item"><span class="meta-num">01</span><span>Choose Source</span></div>
+          <div class="meta-sep">/</div>
+          <div class="meta-item"><span class="meta-num">02</span><span>Host &amp; Style Signal</span></div>
+          <div class="meta-sep">/</div>
+          <div class="meta-item"><span class="meta-num">03</span><span>Save &amp; Share Anywhere</span></div>
         </div>
       </section>
 
@@ -105,14 +109,14 @@
             <span class="step-badge" id="step-badge-text">Active</span>
           </div>
 
-          <!-- Mode Selector Tabs (3 Options) -->
+          <!-- Mode Selector Tabs (3 Modern Options) -->
           <div class="mode-switch" role="tablist" aria-label="Source mode">
             <button class="mode-tab is-active" role="tab" aria-selected="true" data-mode="url" id="tab-url">
               <span class="tab-icon">↗</span>
               <span>URL to QR</span>
             </button>
             <button class="mode-tab" role="tab" aria-selected="false" data-mode="photos" id="tab-photos">
-              <span class="tab-icon">▧</span>
+              <span class="tab-icon">▦</span>
               <span>Image to QR</span>
             </button>
             <button class="mode-tab" role="tab" aria-selected="false" data-mode="link" id="tab-link">
@@ -152,7 +156,7 @@
             <div class="photo-intro">
               <span class="photo-intro-icon">▦</span>
               <div class="photo-intro-content">
-                <strong>Upload image. Scan to open.</strong>
+                <strong>Upload image · Scan to open on any camera</strong>
                 <p>Upload PNG, JPG, WEBP, or GIF. QR Forge securely hosts the image and encodes its public link into the QR code so any camera can scan and view it instantly.</p>
               </div>
             </div>
@@ -184,7 +188,7 @@
             </div>
           </div>
 
-          <!-- Tab 3: Image to Link Generator Panel (NEW) -->
+          <!-- Tab 3: Image to Link Generator Panel -->
           <div id="link-panel" class="mode-panel is-hidden" role="tabpanel" aria-labelledby="tab-link">
             <div class="photo-intro link-mode-intro">
               <span class="photo-intro-icon">🔗</span>
@@ -333,25 +337,29 @@
           <div class="palette-presets" id="styling-presets" aria-label="Curated color themes">
             <span class="presets-label">Curated Studio Palettes</span>
             <div class="presets-list">
-              <button type="button" class="preset-chip" data-fg="#14231d" data-bg="#ffffff" title="Classic Noir">
-                <span class="preset-preview" style="background: linear-gradient(135deg, #14231d 50%, #ffffff 50%);"></span>
+              <button type="button" class="preset-chip" data-fg="#09090b" data-bg="#ffffff" title="Classic Noir">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #09090b 50%, #ffffff 50%);"></span>
                 <span>Classic</span>
               </button>
-              <button type="button" class="preset-chip" data-fg="#14231d" data-bg="#d8fb69" title="Acid Studio">
-                <span class="preset-preview" style="background: linear-gradient(135deg, #14231d 50%, #d8fb69 50%);"></span>
+              <button type="button" class="preset-chip" data-fg="#4f46e5" data-bg="#ffffff" title="Royal Indigo">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #4f46e5 50%, #ffffff 50%);"></span>
+                <span>Indigo</span>
+              </button>
+              <button type="button" class="preset-chip" data-fg="#09090b" data-bg="#d8fb69" title="Acid Studio">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #09090b 50%, #d8fb69 50%);"></span>
                 <span>Acid Studio</span>
               </button>
-              <button type="button" class="preset-chip" data-fg="#ff6f52" data-bg="#fbfcf8" title="Warm Coral">
-                <span class="preset-preview" style="background: linear-gradient(135deg, #ff6f52 50%, #fbfcf8 50%);"></span>
-                <span>Coral Warmth</span>
+              <button type="button" class="preset-chip" data-fg="#e11d48" data-bg="#fff1f2" title="Rose Velvet">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #e11d48 50%, #fff1f2 50%);"></span>
+                <span>Rose Velvet</span>
               </button>
-              <button type="button" class="preset-chip" data-fg="#14231d" data-bg="#e9f2e9" title="Sage Moss">
-                <span class="preset-preview" style="background: linear-gradient(135deg, #14231d 50%, #e9f2e9 50%);"></span>
-                <span>Sage Moss</span>
+              <button type="button" class="preset-chip" data-fg="#059669" data-bg="#ecfdf5" title="Emerald Mint">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #059669 50%, #ecfdf5 50%);"></span>
+                <span>Emerald</span>
               </button>
-              <button type="button" class="preset-chip" data-fg="#d8fb69" data-bg="#14231d" title="Acid Dark">
-                <span class="preset-preview" style="background: linear-gradient(135deg, #d8fb69 50%, #14231d 50%);"></span>
-                <span>Acid Dark</span>
+              <button type="button" class="preset-chip" data-fg="#f59e0b" data-bg="#09090b" title="Obsidian Gold">
+                <span class="preset-preview" style="background: linear-gradient(135deg, #f59e0b 50%, #09090b 50%);"></span>
+                <span>Gold Noir</span>
               </button>
             </div>
           </div>
@@ -388,9 +396,9 @@
             <div class="style-field color-field">
               <label class="field-label" for="foreground-color">Ink color (QR)</label>
               <div class="color-control" id="fg-control-wrap">
-                <input id="foreground-color" type="color" value="#14231d" />
-                <span class="color-preview-pill" id="fg-preview-pill" style="background-color: #14231d;"></span>
-                <span class="color-hex-text" id="foreground-value">#14231D</span>
+                <input id="foreground-color" type="color" value="#09090b" />
+                <span class="color-preview-pill" id="fg-preview-pill" style="background-color: #09090b;"></span>
+                <span class="color-hex-text" id="foreground-value">#09090B</span>
               </div>
             </div>
 
@@ -422,7 +430,7 @@
           <p class="error-message" id="error-message" role="alert" aria-live="polite"></p>
         </div>
 
-        <!-- Output / Preview Panel (Adaptive for QR & Link Generator) -->
+        <!-- Output / Preview Panel -->
         <aside class="preview-panel panel" id="preview-panel" aria-label="Output preview">
           <div class="preview-topline">
             <div>
@@ -446,7 +454,7 @@
           <div class="preview-footer">
             <div class="preview-footer-left">
               <span class="status-indicator"></span>
-              <span class="footer-note">No account · No watermark</span>
+              <span class="footer-note">No watermark · Mobile Storage Ready</span>
             </div>
             <span class="footer-mark">QR / FORGE</span>
           </div>
@@ -455,10 +463,10 @@
 
       <!-- How It Works Section -->
       <section class="how-it-works" aria-labelledby="how-title">
-        <div class="section-kicker">A small ritual for a better signal</div>
+        <div class="section-kicker">A streamlined ritual for studio-grade results</div>
         <h2 id="how-title">
           From blank canvas<br />
-          <em>to scan-ready.</em>
+          <span class="gradient-text">to scan-ready.</span>
         </h2>
 
         <div class="ritual-steps">
@@ -479,8 +487,8 @@
           <div class="ritual-step">
             <span class="ritual-number">03</span>
             <div class="ritual-icon icon-download">↓</div>
-            <h3>Take it with you</h3>
-            <p>Download high-res PNG, infinitely scalable vector SVG, or copy generated image links directly to your clipboard.</p>
+            <h3>Save directly to device</h3>
+            <p>Download directly to mobile storage, save to Camera Roll via native mobile share, or download vector SVG for print.</p>
           </div>
         </div>
       </section>
@@ -492,7 +500,7 @@
         <span>Built for the in-between moments · QR Forge Studio</span>
       </div>
       <div class="footer-right">
-        <span>QR / FORGE <span class="footer-accent">●</span> 3-IN-1 STUDIO EDITION</span>
+        <span>QR / FORGE <span class="footer-accent">●</span> STUDIO EDITION</span>
       </div>
     </footer>
   </div>
